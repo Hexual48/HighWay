@@ -1,32 +1,31 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(PlayerMovement))]
 public class PlayerTemporaryShooter : MonoBehaviour
 {
     [SerializeField] private int ammo = 30;
-    [SerializeField] private float recoilPower = 12f;
+    [SerializeField] private float recoil = 12f;
 
-    private PlayerMovement playerMovement;
-    private Camera mainCamera;
+    private PlayerMovement movement;
+    private Camera cam;
 
     private void Awake()
     {
-        playerMovement = GetComponent<PlayerMovement>();
-        mainCamera = Camera.main;
+        movement = GetComponent<PlayerMovement>();
+        cam = Camera.main;
     }
 
     public void OnAttack(InputValue value)
     {
-        if (!value.isPressed || ammo <= 0 || mainCamera == null)
+        if (!value.isPressed || ammo <= 0)
         {
             return;
         }
 
-        Vector2 mousePosition = mainCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-        Vector2 shootDirection = (mousePosition - (Vector2)transform.position).normalized;
+        Vector2 mouse = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector2 dir = (mouse - (Vector2)transform.position).normalized;
 
-        playerMovement.AddExternalVelocity(-shootDirection * recoilPower);
+        movement.AddRecoil(-dir * recoil);
         ammo--;
     }
 }

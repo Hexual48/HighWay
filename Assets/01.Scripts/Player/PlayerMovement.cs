@@ -1,49 +1,61 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(Collider2D))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Move")]
-    [SerializeField] private float moveSpeed = 8f;
+    [SerializeField] private float speed = 8f;
+    [SerializeField] private float jumpPower = 12f;
 
-    [Header("Jump")]
-    [SerializeField] private float jumpForce = 12f;
+    [Header("Ground")]
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundCheckDistance = 0.08f;
+    [SerializeField] private float groundDistance = 0.08f;
 
-    [Header("External Velocity")]
-    [SerializeField] private float externalVelocityRecovery = 35f;
+    [Header("Extra")]
+    [SerializeField] private float brake = 35f;
+    [SerializeField] private float stopDeadzone = 0.01f;
 
-    private readonly RaycastHit2D[] groundHits = new RaycastHit2D[4];
+    private readonly RaycastHit2D[] hits = new RaycastHit2D[1];
 
-    private Rigidbody2D rigidBody;
+    private Rigidbody2D rb;
     private Collider2D playerCollider;
-    private Vector2 moveInput;
-    private Vector2 externalVelocity;
-    private Vector2 previousAppliedExternalVelocity;
+    private ContactFilter2D groundFilter;
+    private Vector2 moveDir;
+    private float extraX;
 
     private void Awake()
     {
-        rigidBody = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();
         playerCollider = GetComponent<Collider2D>();
+
+        groundFilter = new ContactFilter2D
+        {
+            useLayerMask = true,
+            useTriggers = false
+        };
+        groundFilter.SetLayerMask(groundLayer);
     }
 
     private void FixedUpdate()
     {
-        Move();
-    }
+        if (moveDir.x != 0f && extraX != 0f && Mathf.Sign(moveDir.x) != Mathf.Sign(extraX))
+        {
+            extraX = 0f;
+        }
 
-    private void OnDisable()
-    {
-        externalVelocity = Vector2.zero;
-        previousAppliedExternalVelocity = Vector2.zero;
+        Vector2 vel = rb.linearVelocity;
+        vel.x = moveDir.x * speed + extraX;
+        rb.linearVelocity = vel;
+
+        if (Mathf.Abs(moveDir.x) <= stopDeadzone)
+        {
+            extraX = Mathf.MoveTowards(extraX, 0f, brake * Time.fixedDeltaTime);
+        }
     }
 
     public void OnMove(InputValue value)
     {
-        moveInput = value.Get<Vector2>();
+        moveDir = value.Get<Vector2>();
     }
 
     public void OnJump(InputValue value)
@@ -53,59 +65,23 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Vector2 velocity = rigidBody.linearVelocity - previousAppliedExternalVelocity;
-        velocity.y = jumpForce;
-        rigidBody.linearVelocity = velocity + externalVelocity;
-        previousAppliedExternalVelocity = externalVelocity;
+        Vector2 velocity = rb.linearVelocity;
+        velocity.y = jumpPower;
+        rb.linearVelocity = velocity;
     }
 
-    public void AddExternalVelocity(Vector2 velocity)
+    public void AddRecoil(Vector2 value)
     {
-        externalVelocity += velocity;
-    }
+        extraX += value.x;
 
-    private void Move()
-    {
-        Vector2 velocity = rigidBody.linearVelocity - previousAppliedExternalVelocity;
-        velocity.x = GetMoveDirection() * moveSpeed;
-
-        rigidBody.linearVelocity = velocity + externalVelocity;
-        previousAppliedExternalVelocity = externalVelocity;
-
-        externalVelocity = Vector2.MoveTowards(
-            externalVelocity,
-            Vector2.zero,
-            externalVelocityRecovery * Time.fixedDeltaTime);
-    }
-
-    private float GetMoveDirection()
-    {
-        if (moveInput.x > 0.01f)
+        if (value.y != 0f)
         {
-            return 1f;
+            rb.AddForce(Vector2.up * value.y, ForceMode2D.Impulse);
         }
-
-        if (moveInput.x < -0.01f)
-        {
-            return -1f;
-        }
-
-        return 0f;
     }
 
     private bool IsGrounded()
     {
-        ContactFilter2D filter = new ContactFilter2D();
-        filter.SetLayerMask(groundLayer);
-        filter.useLayerMask = true;
-        filter.useTriggers = false;
-
-        int hitCount = playerCollider.Cast(
-            Vector2.down,
-            filter,
-            groundHits,
-            groundCheckDistance);
-
-        return hitCount > 0;
+        return playerCollider.Cast(Vector2.down, groundFilter, hits, groundDistance) > 0;
     }
 }
