@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerTemporaryShooter : MonoBehaviour
 {
-    [SerializeField] private int ammo = 30;
+    [SerializeField] private int ammo = 1000;
     [SerializeField] private float recoil = 12f;
 
     private PlayerMovement movement;
