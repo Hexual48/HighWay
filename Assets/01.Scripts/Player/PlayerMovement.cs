@@ -5,27 +5,23 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Collider2D))]
 public class PlayerMovement : MonoBehaviour
 {
+    private const float CheckDistance = 0.08f;
+    private const float MinContactNormal = 0.5f;
+    private const float WallJumpLockTime = 0.12f;
+    private const float MomentumBrake = 12f;
+    private const float RecoilBrake = 16f;
+    private const float MaxAirRecoilX = 18f;
+    private const float MaxGroundRecoilX = 18f;
+
     [Header("Move")]
     [SerializeField] private float speed = 8f;
     [SerializeField] private float jumpPower = 12f;
-    [SerializeField] private float fallGravity = 1.3f;
 
     [Header("Ground")]
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundDistance = 0.02f;
-    [SerializeField] private float groundNormal = 0.5f;
 
     [Header("Wall")]
-    [SerializeField] private float wallDistance = 0.02f;
     [SerializeField] private float wallJumpPower = 12f;
-    [SerializeField] private float wallJumpLockTime = 0.12f;
-    [SerializeField] private float wallNormal = 0.5f;
-
-    [Header("Momentum")]
-    [SerializeField] private float momentumBrake = 12f;
-    [SerializeField] private float maxMomentumX = 18f;
-    [SerializeField] private float recoilBrake = 45f;
-    [SerializeField] private float maxRecoilX = 12f;
 
     private readonly RaycastHit2D[] hits = new RaycastHit2D[4];
 
@@ -34,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
     private ContactFilter2D groundFilter;
     private Vector2 moveDir;
     private float momentumX;
+    private float airRecoilX;
     private float recoilX;
     private float moveLockTimer;
 
@@ -54,30 +51,30 @@ public class PlayerMovement : MonoBehaviour
     {
         bool grounded = IsGrounded();
 
-        if (grounded && moveDir.x != 0f && momentumX != 0f && Mathf.Sign(moveDir.x) != Mathf.Sign(momentumX))
-        {
-            momentumX = 0f;
-        }
-
         if (moveLockTimer > 0f)
         {
             moveLockTimer -= Time.fixedDeltaTime;
         }
 
+        if (moveLockTimer <= 0f && momentumX != 0f && (moveDir.x == 0f || Mathf.Sign(moveDir.x) != Mathf.Sign(momentumX)))
+        {
+            momentumX = 0f;
+        }
+
         float inputX = moveLockTimer > 0f ? 0f : moveDir.x * speed;
-        rb.linearVelocity = new Vector2(inputX + momentumX + recoilX, rb.linearVelocity.y);
-        
+        rb.linearVelocity = new Vector2(inputX + momentumX + airRecoilX + recoilX, rb.linearVelocity.y);
+
         if (!grounded && rb.linearVelocity.y < 0f)
         {
-            rb.AddForce(Physics2D.gravity * rb.gravityScale * (fallGravity - 1f), ForceMode2D.Force);
+            rb.AddForce(Physics2D.gravity, ForceMode2D.Force);
         }
 
         if (grounded)
         {
-            momentumX = Mathf.MoveTowards(momentumX, 0f, momentumBrake * Time.fixedDeltaTime);
+            momentumX = Mathf.MoveTowards(momentumX, 0f, MomentumBrake * Time.fixedDeltaTime);
+            airRecoilX = Mathf.MoveTowards(airRecoilX, 0f, MomentumBrake * Time.fixedDeltaTime);
+            recoilX = Mathf.MoveTowards(recoilX, 0f, RecoilBrake * Time.fixedDeltaTime);
         }
-
-        recoilX = Mathf.MoveTowards(recoilX, 0f, recoilBrake * Time.fixedDeltaTime);
     }
 
     public void OnMove(InputValue value)
@@ -94,6 +91,8 @@ public class PlayerMovement : MonoBehaviour
 
         if (IsGrounded())
         {
+            airRecoilX = Mathf.Clamp(airRecoilX + recoilX, -MaxAirRecoilX, MaxAirRecoilX);
+            recoilX = 0f;
             rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
             return;
         }
@@ -103,35 +102,32 @@ public class PlayerMovement : MonoBehaviour
         if (wallDir != 0)
         {
             momentumX = -wallDir * wallJumpPower;
-            moveLockTimer = wallJumpLockTime;
+            moveLockTimer = WallJumpLockTime;
             rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
         }
     }
 
     public void AddRecoil(Vector2 value)
     {
-        if (!IsGrounded())
+        if (IsGrounded())
         {
-            momentumX = Mathf.Clamp(momentumX + value.x, -maxMomentumX, maxMomentumX);
+            recoilX = Mathf.Clamp(recoilX + value.x, -MaxGroundRecoilX, MaxGroundRecoilX);
         }
         else
         {
-            recoilX = Mathf.Clamp(recoilX + value.x, -maxRecoilX, maxRecoilX);
+            airRecoilX = Mathf.Clamp(airRecoilX + value.x, -MaxAirRecoilX, MaxAirRecoilX);
         }
 
-        if (value.y != 0f)
-        {
-            rb.AddForce(Vector2.up * value.y, ForceMode2D.Impulse);
-        }
+        rb.linearVelocity += value;
     }
 
     private bool IsGrounded()
     {
-        int count = playerCollider.Cast(Vector2.down, groundFilter, hits, groundDistance);
+        int count = playerCollider.Cast(Vector2.down, groundFilter, hits, CheckDistance);
 
         for (int i = 0; i < count; i++)
         {
-            if (hits[i].normal.y > groundNormal)
+            if (hits[i].normal.y > MinContactNormal)
             {
                 return true;
             }
@@ -142,21 +138,21 @@ public class PlayerMovement : MonoBehaviour
 
     private int GetWallDir()
     {
-        int leftCount = playerCollider.Cast(Vector2.left, groundFilter, hits, wallDistance);
+        int leftCount = playerCollider.Cast(Vector2.left, groundFilter, hits, CheckDistance);
 
         for (int i = 0; i < leftCount; i++)
         {
-            if (hits[i].normal.x > wallNormal)
+            if (hits[i].normal.x > MinContactNormal)
             {
                 return -1;
             }
         }
 
-        int rightCount = playerCollider.Cast(Vector2.right, groundFilter, hits, wallDistance);
+        int rightCount = playerCollider.Cast(Vector2.right, groundFilter, hits, CheckDistance);
 
         for (int i = 0; i < rightCount; i++)
         {
-            if (hits[i].normal.x < -wallNormal)
+            if (hits[i].normal.x < -MinContactNormal)
             {
                 return 1;
             }

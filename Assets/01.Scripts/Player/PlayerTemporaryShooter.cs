@@ -26,6 +26,6 @@ public class PlayerTemporaryShooter : MonoBehaviour
         Vector2 dir = (mouse - (Vector2)transform.position).normalized;
 
         movement.AddRecoil(-dir * recoil);
-        ammo--;
+        //ammo--;
     }
 }
