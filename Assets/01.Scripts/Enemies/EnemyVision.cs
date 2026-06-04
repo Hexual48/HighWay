@@ -45,14 +45,7 @@ public class EnemyVision2D : MonoBehaviour
     private void OnDrawGizmos()
     {
         Vector2 scanOrigin = origin != null ? origin.position : transform.position;
-        Vector2 forward = transform.TransformDirection(facingDirection);
-
-        if (forward.sqrMagnitude <= Mathf.Epsilon)
-        {
-            forward = transform.right;
-        }
-
-        forward.Normalize();
+        Vector2 forward = GetFacingDirection();
 
         float baseAngle = Mathf.Atan2(forward.y, forward.x) * Mathf.Rad2Deg;
         float startAngle = baseAngle - viewAngle * 0.5f;
@@ -85,14 +78,7 @@ public class EnemyVision2D : MonoBehaviour
     private void ScanTargets()
     {
         Vector2 scanOrigin = origin != null ? origin.position : transform.position;
-        Vector2 forward = transform.TransformDirection(facingDirection);
-
-        if (forward.sqrMagnitude <= Mathf.Epsilon)
-        {
-            forward = transform.right;
-        }
-
-        forward.Normalize();
+        Vector2 forward = GetFacingDirection();
 
         float halfAngle = viewAngle * 0.5f;
         Transform detectedTarget = null;
@@ -152,6 +138,16 @@ public class EnemyVision2D : MonoBehaviour
         }
 
         facingDirection = direction.normalized;
+    }
+
+    public Vector2 GetFacingDirection()
+    {
+        if (facingDirection.sqrMagnitude <= Mathf.Epsilon)
+        {
+            return Vector2.right;
+        }
+
+        return facingDirection.normalized;
     }
 
     public void SetFacingDirectionX(float directionX)

@@ -1,7 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(Collider2D))]
 public class PelletProjectile : MonoBehaviour
 {
     [SerializeField] private float lifeTime = 1.5f;
