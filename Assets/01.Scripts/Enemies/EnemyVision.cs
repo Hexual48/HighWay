@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class EnemyVision2D : MonoBehaviour
 {
@@ -17,6 +18,10 @@ public class EnemyVision2D : MonoBehaviour
     [SerializeField] private LayerMask targetLayer;
     [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private float scanInterval = 0.1f;
+    [SerializeField] private Vector2 facingDirection = Vector2.right;
+
+    [Header("Events")]
+    [SerializeField] private UnityEvent<Transform> onTargetFound;
 
     private float scanTimer;
     public Transform currentTarget;
@@ -39,21 +44,31 @@ public class EnemyVision2D : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Vector2 scanOrigin = GetOriginPosition();
-        Vector2 forward = GetForwardDirection();
+        Vector2 scanOrigin = origin != null ? origin.position : transform.position;
+        Vector2 forward = transform.TransformDirection(facingDirection);
+
+        if (forward.sqrMagnitude <= Mathf.Epsilon)
+        {
+            forward = transform.right;
+        }
+
+        forward.Normalize();
+
         float baseAngle = Mathf.Atan2(forward.y, forward.x) * Mathf.Rad2Deg;
         float startAngle = baseAngle - viewAngle * 0.5f;
         float angleStep = viewAngle / GizmoSegmentCount;
 
         Gizmos.color = gizmoColor;
 
-        Vector2 previousPoint = scanOrigin + GetDirectionFromAngle(startAngle) * viewDistance;
+        float startRadians = startAngle * Mathf.Deg2Rad;
+        Vector2 previousPoint = scanOrigin + new Vector2(Mathf.Cos(startRadians), Mathf.Sin(startRadians)) * viewDistance;
         Gizmos.DrawLine(scanOrigin, previousPoint);
 
         for (int i = 1; i <= GizmoSegmentCount; i++)
         {
             float angle = startAngle + angleStep * i;
-            Vector2 nextPoint = scanOrigin + GetDirectionFromAngle(angle) * viewDistance;
+            float radians = angle * Mathf.Deg2Rad;
+            Vector2 nextPoint = scanOrigin + new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * viewDistance;
             Gizmos.DrawLine(previousPoint, nextPoint);
             previousPoint = nextPoint;
         }
@@ -69,8 +84,16 @@ public class EnemyVision2D : MonoBehaviour
 
     private void ScanTargets()
     {
-        Vector2 scanOrigin = GetOriginPosition();
-        Vector2 forward = GetForwardDirection();
+        Vector2 scanOrigin = origin != null ? origin.position : transform.position;
+        Vector2 forward = transform.TransformDirection(facingDirection);
+
+        if (forward.sqrMagnitude <= Mathf.Epsilon)
+        {
+            forward = transform.right;
+        }
+
+        forward.Normalize();
+
         float halfAngle = viewAngle * 0.5f;
         Transform detectedTarget = null;
 
@@ -101,9 +124,14 @@ public class EnemyVision2D : MonoBehaviour
             }
         }
         
+        bool wasTargetDetected = currentTarget != null;
         currentTarget = detectedTarget;
-        
-        Debug.Log($"{name} Found Player", this);
+
+        if (currentTarget != null)
+        {
+            Debug.Log($"{name} Found Player", this);
+            onTargetFound.Invoke(currentTarget);
+        }
     }
 
     private bool HasObstacle(Vector2 scanOrigin, Vector2 direction, float distance)
@@ -115,27 +143,24 @@ public class EnemyVision2D : MonoBehaviour
 
         return Physics2D.Raycast(scanOrigin, direction, distance, obstacleLayer);
     }
-    
-    private Vector2 GetOriginPosition()
-    {
-        return origin != null ? origin.position : transform.position;
-    }
 
-    private Vector2 GetForwardDirection()
+    public void SetFacingDirection(Vector2 direction)
     {
-        Vector2 direction = transform.right;
-
         if (direction.sqrMagnitude <= Mathf.Epsilon)
         {
-            return Vector2.right;
+            return;
         }
 
-        return direction.normalized;
+        facingDirection = direction.normalized;
     }
 
-    private static Vector2 GetDirectionFromAngle(float angle)
+    public void SetFacingDirectionX(float directionX)
     {
-        float radians = angle * Mathf.Deg2Rad;
-        return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+        if (Mathf.Approximately(directionX, 0f))
+        {
+            return;
+        }
+
+        facingDirection = directionX > 0f ? Vector2.right : Vector2.left;
     }
 }
