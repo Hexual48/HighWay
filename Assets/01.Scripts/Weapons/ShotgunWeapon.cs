@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 [RequireComponent(typeof(PlayerMovement))]
 public class ShotgunWeapon : MonoBehaviour
@@ -8,9 +9,11 @@ public class ShotgunWeapon : MonoBehaviour
     [SerializeField] private AmmoData currentAmmo;
 
     [Header("Projectile")]
-    [SerializeField] private PelletProjectile pelletPrefab;
+    [FormerlySerializedAs("pelletPrefab")]
+    [SerializeField] private BulletProjectile bulletPrefab;
     [SerializeField] private Transform firePoint;
-    [SerializeField] private float pelletSpeed = 30f;
+    [FormerlySerializedAs("pelletSpeed")]
+    [SerializeField] private float bulletSpeed = 30f;
 
     private PlayerMovement movement;
     private Camera mainCamera;
@@ -45,7 +48,7 @@ public class ShotgunWeapon : MonoBehaviour
 
     private void FireAtMouse()
     {
-        if (currentAmmo == null || pelletPrefab == null)
+        if (currentAmmo == null || bulletPrefab == null)
         {
             return;
         }
@@ -77,10 +80,10 @@ public class ShotgunWeapon : MonoBehaviour
             float angle = Random.Range(-halfSpread, halfSpread);
             Vector2 pelletDirection = Quaternion.Euler(0f, 0f, angle) * aimDirection;
 
-            PelletProjectile pellet = Instantiate(pelletPrefab, firePoint.position, Quaternion.identity);
-            pellet.Launch(
+            BulletProjectile bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+            bullet.Launch(
                 pelletDirection,
-                pelletSpeed,
+                bulletSpeed,
                 currentAmmo.damagePerPellet,
                 currentAmmo.penetration,
                 currentAmmo.color,

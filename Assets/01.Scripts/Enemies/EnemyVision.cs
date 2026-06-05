@@ -1,11 +1,10 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 public class EnemyVision2D : MonoBehaviour
 {
     private const int GizmoSegmentCount = 16;
 
-    [Header("Shape")]
+    [Header("DetectRange")]
     [SerializeField] private Transform origin;
     [SerializeField, Min(0.1f)] private float viewDistance = 6f;
     [SerializeField, Range(1f, 360f)] private float viewAngle = 70f;
@@ -19,9 +18,6 @@ public class EnemyVision2D : MonoBehaviour
     [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private float scanInterval = 0.1f;
     [SerializeField] private Vector2 facingDirection = Vector2.right;
-
-    [Header("Events")]
-    [SerializeField] private UnityEvent<Transform> onTargetFound;
 
     private float scanTimer;
     public Transform currentTarget;
@@ -110,14 +106,7 @@ public class EnemyVision2D : MonoBehaviour
             }
         }
         
-        bool wasTargetDetected = currentTarget != null;
         currentTarget = detectedTarget;
-
-        if (currentTarget != null)
-        {
-            Debug.Log($"{name} Found Player", this);
-            onTargetFound.Invoke(currentTarget);
-        }
     }
 
     private bool HasObstacle(Vector2 scanOrigin, Vector2 direction, float distance)

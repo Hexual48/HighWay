@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PelletProjectile : MonoBehaviour
+public class BulletProjectile : MonoBehaviour
 {
     [SerializeField] private float lifeTime = 1.5f;
 

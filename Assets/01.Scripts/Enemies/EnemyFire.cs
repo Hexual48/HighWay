@@ -1,11 +1,14 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class EnemyFire : MonoBehaviour
 {
     [Header("Projectile")]
-    [SerializeField] private PelletProjectile projectilePrefab;
+    [FormerlySerializedAs("projectilePrefab")]
+    [SerializeField] private BulletProjectile bulletPrefab;
     [SerializeField] private Transform firePoint;
-    [SerializeField] private float projectileSpeed = 12f;
+    [FormerlySerializedAs("projectileSpeed")]
+    [SerializeField] private float bulletSpeed = 12f;
 
     [Header("Damage")]
     [SerializeField] private int damage = 1;
@@ -22,7 +25,7 @@ public class EnemyFire : MonoBehaviour
 
     public void FireAt(Transform target)
     {
-        if (target == null || projectilePrefab == null)
+        if (target == null || bulletPrefab == null)
         {
             return;
         }
@@ -30,7 +33,7 @@ public class EnemyFire : MonoBehaviour
         Vector2 origin = firePoint.position;
         Vector2 direction = ((Vector2)target.position - origin).normalized;
 
-        PelletProjectile projectile = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
-        projectile.Launch(direction, projectileSpeed, damage, penetration, trailColor, transform);
+        BulletProjectile bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+        bullet.Launch(direction, bulletSpeed, damage, penetration, trailColor, transform);
     }
 }

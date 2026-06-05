@@ -3,6 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyVision2D))]
 [RequireComponent(typeof(EnemyMovement))]
 [RequireComponent(typeof(EnemyFire))]
+[RequireComponent(typeof(EnemyAiming))]
 public class EnemyController : MonoBehaviour
 {
     private enum EnemyState
@@ -22,23 +23,27 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private EnemyVision2D vision;
     [SerializeField] private EnemyMovement movement;
     [SerializeField] private EnemyFire enemyFire;
-    [SerializeField] private EnemyData enemyData;
+    [SerializeField] private EnemyAiming aiming;
 
     [Header("State Time")]
     [SerializeField] private float idleTime = 1f;
     [SerializeField] private float wanderTime = 1.5f;
-    [SerializeField] private float alertTime = 0.25f;
+    [SerializeField, Min(0f)] private float alertTime = 0.25f;
+    [SerializeField] private float aimTime = 0.4f;
+    [SerializeField] private float cooldown = 0.8f;
     [SerializeField] private float retreatTime = 0.5f;
 
-    [Header("Weapon")]
-    [SerializeField] private Transform weaponHandle;
-    [SerializeField] private float weaponNormalScaleY = 0.5f;
-    [SerializeField] private float weaponFlippedScaleY = -0.5f;
+    [Header("Alert Visual")]
+    [SerializeField] private SpriteRenderer alertRenderer;
 
-    [Header("Facing")]
-    [SerializeField] private SpriteRenderer bodyRenderer;
-    [SerializeField] private bool defaultFacesRight = true;
-    [SerializeField, Min(0f)] private float flipDirectionThreshold = 0.1f;
+    [Header("Movement")]
+    [SerializeField, Min(0f)] private float moveSpeed = 2f;
+
+    [Header("Combat Range")]
+    [SerializeField, Min(0.1f)] private float attackRange = 5f;
+    [SerializeField, Min(0f)] private float retreatDistance = 1.5f;
+    [SerializeField] private Color attackRangeGizmoColor = Color.red;
+    [SerializeField] private Color retreatDistanceGizmoColor = Color.cyan;
 
     private EnemyState currentState = EnemyState.Idle;
     private Vector2 wanderDirection = Vector2.right;
@@ -61,10 +66,22 @@ public class EnemyController : MonoBehaviour
             enemyFire = GetComponent<EnemyFire>();
         }
 
-        if (bodyRenderer == null)
+        if (aiming == null)
         {
-            bodyRenderer = GetComponentInChildren<SpriteRenderer>();
+            aiming = GetComponent<EnemyAiming>();
         }
+
+        if (alertRenderer == null)
+        {
+            Transform alert = transform.Find("AlertPos/Alert");
+
+            if (alert != null)
+            {
+                alertRenderer = alert.GetComponent<SpriteRenderer>();
+            }
+        }
+
+        HideAlert();
     }
 
     private void Start()
@@ -106,6 +123,15 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = attackRangeGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, GetAttackRange());
+
+        Gizmos.color = retreatDistanceGizmoColor;
+        Gizmos.DrawWireSphere(transform.position, GetRetreatDistance());
+    }
+
     private void UpdateIdle()
     {
         if (HasTarget())
@@ -130,10 +156,7 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        if (enemyData != null)
-        {
-            movement?.Move(wanderDirection, enemyData.MoveSpeed);
-        }
+        movement?.Move(wanderDirection, moveSpeed);
 
         stateTimer -= Time.deltaTime;
 
@@ -152,6 +175,14 @@ public class EnemyController : MonoBehaviour
         }
 
         AimAtTarget();
+        UpdateAlertVisual();
+
+        if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
+            return;
+        }
+
         stateTimer -= Time.deltaTime;
 
         if (stateTimer <= 0f)
@@ -169,6 +200,13 @@ public class EnemyController : MonoBehaviour
         }
 
         AimAtTarget();
+
+        if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
+            return;
+        }
+
         MoveTowardTarget();
 
         if (IsTargetInAttackRange())
@@ -182,6 +220,12 @@ public class EnemyController : MonoBehaviour
         if (!HasTarget())
         {
             ChangeState(EnemyState.Wander);
+            return;
+        }
+
+        if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
             return;
         }
 
@@ -209,11 +253,17 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
+        if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
+            return;
+        }
+
         StopMoving();
         AimAtTarget();
         FireAtTarget();
 
-        ChangeState(IsTargetTooClose() ? EnemyState.Retreat : EnemyState.Cooldown);
+        ChangeState(EnemyState.Cooldown);
     }
 
     private void UpdateRetreat()
@@ -243,6 +293,13 @@ public class EnemyController : MonoBehaviour
         }
 
         AimAtTarget();
+
+        if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
+            return;
+        }
+
         stateTimer -= Time.deltaTime;
 
         if (stateTimer > 0f)
@@ -261,31 +318,40 @@ public class EnemyController : MonoBehaviour
         {
             case EnemyState.Idle:
                 StopMoving();
+                HideAlert();
                 stateTimer = idleTime;
                 break;
             case EnemyState.Wander:
+                HideAlert();
                 wanderDirection = Random.value < 0.5f ? Vector2.left : Vector2.right;
-                vision?.SetFacingDirection(wanderDirection);
-                FaceDirection(wanderDirection);
+                aiming?.Face(wanderDirection);
                 stateTimer = wanderTime;
                 break;
             case EnemyState.Alert:
                 StopMoving();
                 stateTimer = alertTime;
+                ShowAlert();
                 break;
             case EnemyState.Aim:
                 StopMoving();
-                stateTimer = enemyData != null ? enemyData.AimTime : 0f;
+                HideAlert();
+                stateTimer = aimTime;
                 break;
             case EnemyState.Retreat:
+                HideAlert();
                 stateTimer = retreatTime;
                 break;
             case EnemyState.Cooldown:
                 StopMoving();
-                stateTimer = enemyData != null ? enemyData.Cooldown : 0f;
+                HideAlert();
+                stateTimer = cooldown;
                 break;
             case EnemyState.Dead:
                 StopMoving();
+                HideAlert();
+                break;
+            default:
+                HideAlert();
                 break;
         }
     }
@@ -307,12 +373,22 @@ public class EnemyController : MonoBehaviour
 
     private bool IsTargetInAttackRange()
     {
-        return enemyData != null && GetTargetDistance() <= enemyData.AttackRange;
+        return GetTargetDistance() <= GetAttackRange();
     }
 
     private bool IsTargetTooClose()
     {
-        return enemyData != null && GetTargetDistance() <= enemyData.RetreatDistance;
+        return GetTargetDistance() <= GetRetreatDistance();
+    }
+
+    private float GetAttackRange()
+    {
+        return attackRange;
+    }
+
+    private float GetRetreatDistance()
+    {
+        return retreatDistance;
     }
 
     private Vector2 GetDirectionToTarget()
@@ -328,17 +404,17 @@ public class EnemyController : MonoBehaviour
 
     private void MoveTowardTarget()
     {
-        if (HasTarget() && enemyData != null)
+        if (HasTarget())
         {
-            movement?.MoveToward(vision.currentTarget.position, enemyData.MoveSpeed);
+            movement?.MoveToward(vision.currentTarget.position, moveSpeed);
         }
     }
 
     private void MoveAwayFromTarget()
     {
-        if (HasTarget() && enemyData != null)
+        if (HasTarget())
         {
-            movement?.MoveAwayFrom(vision.currentTarget.position, enemyData.MoveSpeed);
+            movement?.MoveAwayFrom(vision.currentTarget.position, moveSpeed);
         }
     }
 
@@ -356,13 +432,7 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        vision?.SetFacingDirection(direction);
-        FaceDirection(direction);
-
-        if (weaponHandle != null)
-        {
-            AimWeapon(direction);
-        }
+        aiming?.Aim(direction);
     }
 
     private void FireAtTarget()
@@ -373,24 +443,42 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    private void FaceDirection(Vector2 direction)
+    private void ShowAlert()
     {
-        if (bodyRenderer == null || Mathf.Abs(direction.x) < flipDirectionThreshold)
+        if (alertRenderer == null)
         {
             return;
         }
 
-        bool shouldFaceRight = direction.x > 0f;
-        bodyRenderer.flipX = defaultFacesRight ? !shouldFaceRight : shouldFaceRight;
+        alertRenderer.enabled = true;
+        Color color = alertRenderer.color;
+        color.a = 1f;
+        alertRenderer.color = color;
     }
 
-    private void AimWeapon(Vector2 direction)
+    private void HideAlert()
     {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        weaponHandle.rotation = Quaternion.Euler(0f, 0f, angle);
+        if (alertRenderer == null)
+        {
+            return;
+        }
 
-        Vector3 scale = weaponHandle.localScale;
-        scale.y = angle > 90f || angle < -90f ? weaponFlippedScaleY : weaponNormalScaleY;
-        weaponHandle.localScale = scale;
+        Color color = alertRenderer.color;
+        color.a = 0f;
+        alertRenderer.color = color;
+        alertRenderer.enabled = false;
+    }
+
+    private void UpdateAlertVisual()
+    {
+        if (alertRenderer == null)
+        {
+            return;
+        }
+
+        float alpha = alertTime > 0f ? Mathf.Clamp01(stateTimer / alertTime) : 0f;
+        Color color = alertRenderer.color;
+        color.a = alpha;
+        alertRenderer.color = color;
     }
 }
