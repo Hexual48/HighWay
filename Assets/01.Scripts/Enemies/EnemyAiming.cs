@@ -9,13 +9,9 @@ public class EnemyAiming : MonoBehaviour
 
     [Header("Facing")]
     [SerializeField] private bool defaultFacesRight = true;
-    [SerializeField, Min(0f)] private float flipDirectionThreshold = 0.1f;
-
-    [Header("Weapon")]
-    [SerializeField] private float weaponNormalScaleY = 0.5f;
-    [SerializeField] private float weaponFlippedScaleY = -0.5f;
 
     private bool isFacingRight = true;
+    private float weaponScaleY;
 
     private void Awake()
     {
@@ -27,6 +23,11 @@ public class EnemyAiming : MonoBehaviour
         if (bodyRenderer == null)
         {
             bodyRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (weaponHandle != null)
+        {
+            weaponScaleY = Mathf.Abs(weaponHandle.localScale.y);
         }
     }
 
@@ -57,11 +58,27 @@ public class EnemyAiming : MonoBehaviour
         Vector2 faceDirection = direction.normalized;
         vision?.SetFacingDirection(faceDirection);
         FaceDirection(faceDirection);
+
+        if (weaponHandle != null)
+        {
+            AimWeapon(faceDirection);
+        }
+    }
+
+    public void AimForward()
+    {
+        Vector2 forward = isFacingRight ? Vector2.right : Vector2.left;
+        vision?.SetFacingDirection(forward);
+
+        if (weaponHandle != null)
+        {
+            AimWeapon(forward);
+        }
     }
 
     private void FaceDirection(Vector2 direction)
     {
-        if (bodyRenderer == null || Mathf.Abs(direction.x) < flipDirectionThreshold)
+        if (bodyRenderer == null || Mathf.Approximately(direction.x, 0f))
         {
             return;
         }
@@ -76,7 +93,7 @@ public class EnemyAiming : MonoBehaviour
         weaponHandle.rotation = Quaternion.Euler(0f, 0f, angle);
 
         Vector3 scale = weaponHandle.localScale;
-        scale.y = isFacingRight ? weaponNormalScaleY : weaponFlippedScaleY;
+        scale.y = isFacingRight ? weaponScaleY : -weaponScaleY;
         weaponHandle.localScale = scale;
     }
 }

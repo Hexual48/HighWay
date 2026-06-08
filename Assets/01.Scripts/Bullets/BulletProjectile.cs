@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class BulletProjectile : MonoBehaviour
 {
+    private const int EnemyBulletDamage = 1;
+    private const int EnemyBulletPenetration = 0;
+
     [SerializeField] private float lifeTime = 1.5f;
 
     private Rigidbody2D rb;
@@ -32,6 +35,11 @@ public class BulletProjectile : MonoBehaviour
         }
 
         Destroy(gameObject, lifeTime);
+    }
+
+    public void LaunchEnemy(Vector2 direction, float speed, Color trailColor, Transform ownerTransform)
+    {
+        Launch(direction, speed, EnemyBulletDamage, EnemyBulletPenetration, trailColor, ownerTransform);
     }
 
     private void OnTriggerEnter2D(Collider2D other)

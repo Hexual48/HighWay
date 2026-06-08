@@ -14,6 +14,7 @@ public class EnemyController : MonoBehaviour
         Chase,
         Aim,
         Fire,
+        Reload,
         Retreat,
         Cooldown,
         Dead
@@ -33,6 +34,15 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private float cooldown = 0.8f;
     [SerializeField] private float retreatTime = 0.5f;
 
+    [Header("Fire")]
+    [SerializeField, Min(1)] private int burstShotCount = 1;
+    [SerializeField, Min(0f)] private float fireCooldown = 0.1f;
+
+    [Header("Reload")]
+    [SerializeField, Min(1)] private int magazineSize = 5;
+    [SerializeField, Min(0f)] private float reloadTime = 1.5f;
+    [SerializeField] private int currentAmmo;
+
     [Header("Alert Visual")]
     [SerializeField] private SpriteRenderer alertRenderer;
 
@@ -48,6 +58,7 @@ public class EnemyController : MonoBehaviour
     private EnemyState currentState = EnemyState.Idle;
     private Vector2 wanderDirection = Vector2.right;
     private float stateTimer;
+    private int firedShotCount;
 
     private void Awake()
     {
@@ -86,6 +97,7 @@ public class EnemyController : MonoBehaviour
 
     private void Start()
     {
+        currentAmmo = magazineSize;
         ChangeState(EnemyState.Idle);
     }
 
@@ -110,6 +122,9 @@ public class EnemyController : MonoBehaviour
                 break;
             case EnemyState.Fire:
                 UpdateFire();
+                break;
+            case EnemyState.Reload:
+                UpdateReload();
                 break;
             case EnemyState.Retreat:
                 UpdateRetreat();
@@ -170,7 +185,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Wander);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -195,7 +210,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Wander);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -219,7 +234,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Wander);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -249,7 +264,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Cooldown);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -261,16 +276,69 @@ public class EnemyController : MonoBehaviour
 
         StopMoving();
         AimAtTarget();
-        FireAtTarget();
+        stateTimer -= Time.deltaTime;
 
-        ChangeState(EnemyState.Cooldown);
+        if (stateTimer > 0f)
+        {
+            return;
+        }
+
+        FireAtTarget();
+        firedShotCount++;
+        currentAmmo--;
+
+        if (currentAmmo <= 0)
+        {
+            ChangeState(EnemyState.Reload);
+            return;
+        }
+
+        if (firedShotCount >= burstShotCount)
+        {
+            ChangeState(EnemyState.Cooldown);
+            return;
+        }
+
+        stateTimer = fireCooldown;
+    }
+
+    private void UpdateReload()
+    {
+        StopMoving();
+
+        if (HasTarget())
+        {
+            AimAtTarget();
+        }
+
+        stateTimer -= Time.deltaTime;
+
+        if (stateTimer > 0f)
+        {
+            return;
+        }
+
+        currentAmmo = magazineSize;
+
+        if (!HasTarget())
+        {
+            ChangeState(EnemyState.Idle);
+        }
+        else if (IsTargetTooClose())
+        {
+            ChangeState(EnemyState.Retreat);
+        }
+        else
+        {
+            ChangeState(IsTargetInAttackRange() ? EnemyState.Aim : EnemyState.Chase);
+        }
     }
 
     private void UpdateRetreat()
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Wander);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -288,7 +356,7 @@ public class EnemyController : MonoBehaviour
     {
         if (!HasTarget())
         {
-            ChangeState(EnemyState.Wander);
+            ChangeState(EnemyState.Idle);
             return;
         }
 
@@ -319,6 +387,7 @@ public class EnemyController : MonoBehaviour
             case EnemyState.Idle:
                 StopMoving();
                 HideAlert();
+                aiming?.AimForward();
                 stateTimer = idleTime;
                 break;
             case EnemyState.Wander:
@@ -336,6 +405,17 @@ public class EnemyController : MonoBehaviour
                 StopMoving();
                 HideAlert();
                 stateTimer = aimTime;
+                break;
+            case EnemyState.Fire:
+                StopMoving();
+                HideAlert();
+                firedShotCount = 0;
+                stateTimer = 0f;
+                break;
+            case EnemyState.Reload:
+                StopMoving();
+                HideAlert();
+                stateTimer = reloadTime;
                 break;
             case EnemyState.Retreat:
                 HideAlert();

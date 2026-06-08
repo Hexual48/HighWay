@@ -3,14 +3,13 @@ using UnityEngine.InputSystem;
 
 public class PlayerAimToCursor : MonoBehaviour
 {
-    [SerializeField] private float normalScaleY = 0.5f;
-    [SerializeField] private float flippedScaleY = -0.5f;
-
     private Camera mainCamera;
+    private float scaleY;
 
     private void Awake()
     {
         mainCamera = Camera.main;
+        scaleY = Mathf.Abs(transform.localScale.y);
     }
 
     private void Update()
@@ -38,7 +37,7 @@ public class PlayerAimToCursor : MonoBehaviour
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
 
         Vector3 scale = transform.localScale;
-        scale.y = angle > 90f || angle < -90f ? flippedScaleY : normalScaleY;
+        scale.y = angle > 90f || angle < -90f ? -scaleY : scaleY;
         transform.localScale = scale;
     }
 }
