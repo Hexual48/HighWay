@@ -25,6 +25,7 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private EnemyMovement movement;
     [SerializeField] private EnemyFire enemyFire;
     [SerializeField] private EnemyAiming aiming;
+    [SerializeField] private EnemyHoldShoot holdShoot;
 
     [Header("State Time")]
     [SerializeField] private float idleTime = 1f;
@@ -60,6 +61,11 @@ public class EnemyController : MonoBehaviour
     private float stateTimer;
     private int firedShotCount;
 
+    public bool IsAiming => currentState == EnemyState.Aim;
+    public bool IsFiring => currentState == EnemyState.Fire;
+    public Transform CurrentTarget => vision != null ? vision.currentTarget : null;
+    public float AimTimeRemaining => IsAiming ? Mathf.Max(0f, stateTimer) : 0f;
+
     private void Awake()
     {
         if (vision == null)
@@ -80,6 +86,11 @@ public class EnemyController : MonoBehaviour
         if (aiming == null)
         {
             aiming = GetComponent<EnemyAiming>();
+        }
+
+        if (holdShoot == null)
+        {
+            holdShoot = GetComponent<EnemyHoldShoot>();
         }
 
         if (alertRenderer == null)
@@ -262,20 +273,22 @@ public class EnemyController : MonoBehaviour
 
     private void UpdateFire()
     {
-        if (!HasTarget())
+        Transform fireTarget = GetFireTarget();
+
+        if (fireTarget == null)
         {
             ChangeState(EnemyState.Idle);
             return;
         }
 
-        if (IsTargetTooClose())
+        if (IsTargetTooClose(fireTarget))
         {
             ChangeState(EnemyState.Retreat);
             return;
         }
 
         StopMoving();
-        AimAtTarget();
+        AimAtTarget(fireTarget);
         stateTimer -= Time.deltaTime;
 
         if (stateTimer > 0f)
@@ -283,7 +296,7 @@ public class EnemyController : MonoBehaviour
             return;
         }
 
-        FireAtTarget();
+        FireAtTarget(fireTarget);
         firedShotCount++;
         currentAmmo--;
 
@@ -380,7 +393,13 @@ public class EnemyController : MonoBehaviour
 
     private void ChangeState(EnemyState nextState)
     {
+        bool wasFiring = currentState == EnemyState.Fire;
         currentState = nextState;
+
+        if (wasFiring && currentState != EnemyState.Fire)
+        {
+            holdShoot?.EndHold();
+        }
 
         switch (currentState)
         {
@@ -411,6 +430,7 @@ public class EnemyController : MonoBehaviour
                 HideAlert();
                 firedShotCount = 0;
                 stateTimer = 0f;
+                holdShoot?.BeginHold(CurrentTarget);
                 break;
             case EnemyState.Reload:
                 StopMoving();
@@ -461,6 +481,12 @@ public class EnemyController : MonoBehaviour
         return GetTargetDistance() <= GetRetreatDistance();
     }
 
+    private bool IsTargetTooClose(Transform target)
+    {
+        return target != null
+            && Vector2.Distance(transform.position, target.position) <= GetRetreatDistance();
+    }
+
     private float GetAttackRange()
     {
         return attackRange;
@@ -505,22 +531,39 @@ public class EnemyController : MonoBehaviour
 
     private void AimAtTarget()
     {
-        Vector2 direction = GetDirectionToTarget();
+        AimAtTarget(CurrentTarget);
+    }
+
+    private void AimAtTarget(Transform target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        Vector2 direction = target.position - transform.position;
 
         if (direction.sqrMagnitude <= Mathf.Epsilon)
         {
             return;
         }
 
-        aiming?.Aim(direction);
+        aiming?.Aim(direction.normalized);
     }
 
-    private void FireAtTarget()
+    private Transform GetFireTarget()
     {
         if (HasTarget())
         {
-            enemyFire?.FireAt(vision.currentTarget);
+            return CurrentTarget;
         }
+
+        return holdShoot != null ? holdShoot.HeldTarget : null;
+    }
+
+    private void FireAtTarget(Transform target)
+    {
+        enemyFire?.FireAt(target);
     }
 
     private void ShowAlert()

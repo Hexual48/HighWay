@@ -478,7 +478,12 @@ MonoBehaviour:
   aimTime: 0.4
   cooldown: 0.8
   retreatTime: 0.5
-  alertRenderer: {fileID: 0}
+  burstShotCount: 50
+  fireCooldown: 0.1
+  magazineSize: 5
+  reloadTime: 1.5
+  currentAmmo: 0
+  alertRenderer: {fileID: 123458713}
   moveSpeed: 2
   attackRange: 21
   retreatDistance: 5
@@ -574,9 +579,10 @@ MonoBehaviour:
   bulletPrefab: {fileID: 145853117240262634, guid: 00e85f8140baedd47a00e739c4c212c8, type: 3}
   firePoint: {fileID: 1810646751}
   bulletSpeed: 50
-  damage: 1
-  penetration: 0
   trailColor: {r: 1, g: 0.9358407, b: 0, a: 1}
+  spreadAngle: 10
+  spreadGizmoDistance: 17.9
+  spreadGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &390645471
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -593,9 +599,6 @@ MonoBehaviour:
   bodyRenderer: {fileID: 390645463}
   weaponHandle: {fileID: 1008617295}
   defaultFacesRight: 1
-  flipDirectionThreshold: 0.1
-  weaponNormalScaleY: 1.2
-  weaponFlippedScaleY: -1.2
 --- !u!1 &437336932
 GameObject:
   m_ObjectHideFlags: 0
@@ -1254,7 +1257,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1639339122}
   mainCamera: {fileID: 1312215551}
-  cursorWeight: 0.35
+  cursorWeight: 0.5
+  verticalCursorScale: 0.5
   maxOffset: 25
   verticalOffset: 6.5
   groundLayer:
@@ -1611,8 +1615,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b91f6d49c54413e8085c7d2cb4ccf85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalScaleY: 0.5
-  flippedScaleY: -0.5
 --- !u!1 &1698539290
 GameObject:
   m_ObjectHideFlags: 0

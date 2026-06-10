@@ -6,6 +6,7 @@ public class MouseLookCameraTarget : MonoBehaviour
     [SerializeField] private Transform player;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float cursorWeight = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float verticalCursorScale = 0.5f;
     [SerializeField] private float maxOffset = 5f;
     [SerializeField] private float verticalOffset = 6.5f;
     [SerializeField] private LayerMask groundLayer;
@@ -46,6 +47,7 @@ public class MouseLookCameraTarget : MonoBehaviour
             cursorPosition.z = player.position.z;
 
             Vector3 cursorOffset = Vector3.ClampMagnitude(cursorPosition - player.position, maxOffset);
+            cursorOffset.y *= verticalCursorScale;
             targetPosition = basePosition + cursorOffset * cursorWeight;
             targetPosition = ResetVerticalMovementWhenCursorBlocked(cursorPosition, basePosition, targetPosition);
         }

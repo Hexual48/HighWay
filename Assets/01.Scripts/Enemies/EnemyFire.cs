@@ -26,6 +26,8 @@ public class EnemyFire : MonoBehaviour
         }
     }
 
+    public Vector2 FireOrigin => firePoint != null ? firePoint.position : transform.position;
+
     public void FireAt(Transform target)
     {
         if (target == null || bulletPrefab == null)
