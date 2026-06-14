@@ -10,8 +10,19 @@ public class EnemyAiming : MonoBehaviour
     [Header("Facing")]
     [SerializeField] private bool defaultFacesRight = true;
 
+    [Header("Reload")]
+    [SerializeField] private float rightReloadAngle = -45f;
+    [SerializeField] private float leftReloadAngle = 45f;
+    [SerializeField, Min(0f)] private float lowerDuration = 0.2f;
+    [SerializeField, Min(0f)] private float raiseDuration = 0.2f;
+    [SerializeField] private AnimationCurve reloadEase = new AnimationCurve(
+        new Keyframe(0f, 0f),
+        new Keyframe(1f, 1f));
+
     private bool isFacingRight = true;
     private float weaponScaleY;
+    private float reloadStartAngle;
+    private float currentReloadAngle;
 
     private void Awake()
     {
@@ -74,6 +85,52 @@ public class EnemyAiming : MonoBehaviour
         {
             AimWeapon(forward);
         }
+    }
+
+    public void BeginReload()
+    {
+        if (weaponHandle != null)
+        {
+            reloadStartAngle = weaponHandle.eulerAngles.z;
+            currentReloadAngle = isFacingRight ? rightReloadAngle : leftReloadAngle;
+        }
+    }
+
+    public float GetReloadDuration(float waitDuration)
+    {
+        return lowerDuration + Mathf.Max(0f, waitDuration) + raiseDuration;
+    }
+
+    public void UpdateReload(float elapsedTime, float waitDuration)
+    {
+        if (weaponHandle == null)
+        {
+            return;
+        }
+
+        float motion;
+        float safeWaitDuration = Mathf.Max(0f, waitDuration);
+
+        if (elapsedTime < lowerDuration)
+        {
+            float progress = lowerDuration > 0f ? elapsedTime / lowerDuration : 1f;
+            motion = reloadEase.Evaluate(Mathf.Clamp01(progress));
+        }
+        else if (elapsedTime < lowerDuration + safeWaitDuration)
+        {
+            motion = 1f;
+        }
+        else
+        {
+            float raiseElapsed = elapsedTime - lowerDuration - safeWaitDuration;
+            float progress = raiseDuration > 0f ? raiseElapsed / raiseDuration : 1f;
+            motion = 1f - reloadEase.Evaluate(Mathf.Clamp01(progress));
+        }
+
+        weaponHandle.rotation = Quaternion.Euler(
+            0f,
+            0f,
+            reloadStartAngle + currentReloadAngle * motion);
     }
 
     private void FaceDirection(Vector2 direction)

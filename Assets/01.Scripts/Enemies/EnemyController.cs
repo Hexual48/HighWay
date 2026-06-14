@@ -1,25 +1,7 @@
 using UnityEngine;
 
-[RequireComponent(typeof(EnemyVision2D))]
-[RequireComponent(typeof(EnemyMovement))]
-[RequireComponent(typeof(EnemyFire))]
-[RequireComponent(typeof(EnemyAiming))]
 public class EnemyController : MonoBehaviour
 {
-    private enum EnemyState
-    {
-        Idle,
-        Wander,
-        Alert,
-        Chase,
-        Aim,
-        Fire,
-        Reload,
-        Retreat,
-        Cooldown,
-        Dead
-    }
-
     [Header("References")]
     [SerializeField] private EnemyVision2D vision;
     [SerializeField] private EnemyMovement movement;
@@ -42,7 +24,6 @@ public class EnemyController : MonoBehaviour
     [Header("Reload")]
     [SerializeField, Min(1)] private int magazineSize = 5;
     [SerializeField, Min(0f)] private float reloadTime = 1.5f;
-    [SerializeField] private int currentAmmo;
 
     [Header("Alert Visual")]
     [SerializeField] private SpriteRenderer alertRenderer;
@@ -56,15 +37,24 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private Color attackRangeGizmoColor = Color.red;
     [SerializeField] private Color retreatDistanceGizmoColor = Color.cyan;
 
-    private EnemyState currentState = EnemyState.Idle;
-    private Vector2 wanderDirection = Vector2.right;
-    private float stateTimer;
-    private int firedShotCount;
+    private EnemyMachine machine;
 
-    public bool IsAiming => currentState == EnemyState.Aim;
-    public bool IsFiring => currentState == EnemyState.Fire;
+    public bool IsAiming => machine != null && machine.IsAiming;
+    public bool IsFiring => machine != null && machine.IsFiring;
     public Transform CurrentTarget => vision != null ? vision.currentTarget : null;
-    public float AimTimeRemaining => IsAiming ? Mathf.Max(0f, stateTimer) : 0f;
+    public float AimTimeRemaining => machine != null ? machine.AimTimeRemaining : 0f;
+    public float AimDuration => aimTime;
+
+    internal float IdleTime => idleTime;
+    internal float WanderTime => wanderTime;
+    internal float AlertTime => alertTime;
+    internal float AimTime => aimTime;
+    internal float Cooldown => cooldown;
+    internal float RetreatTime => retreatTime;
+    internal int BurstShotCount => burstShotCount;
+    internal float FireCooldown => fireCooldown;
+    internal int MagazineSize => magazineSize;
+    internal float ReloadTime => reloadTime;
 
     private void Awake()
     {
@@ -104,437 +94,80 @@ public class EnemyController : MonoBehaviour
         }
 
         HideAlert();
+        machine = new EnemyMachine(this);
     }
 
     private void Start()
     {
-        currentAmmo = magazineSize;
-        ChangeState(EnemyState.Idle);
+        machine.Start();
     }
 
     private void Update()
     {
-        switch (currentState)
-        {
-            case EnemyState.Idle:
-                UpdateIdle();
-                break;
-            case EnemyState.Wander:
-                UpdateWander();
-                break;
-            case EnemyState.Alert:
-                UpdateAlert();
-                break;
-            case EnemyState.Chase:
-                UpdateChase();
-                break;
-            case EnemyState.Aim:
-                UpdateAim();
-                break;
-            case EnemyState.Fire:
-                UpdateFire();
-                break;
-            case EnemyState.Reload:
-                UpdateReload();
-                break;
-            case EnemyState.Retreat:
-                UpdateRetreat();
-                break;
-            case EnemyState.Cooldown:
-                UpdateCooldown();
-                break;
-            case EnemyState.Dead:
-                StopMoving();
-                break;
-        }
+        machine.Tick(Time.deltaTime);
     }
 
     private void OnDrawGizmos()
     {
         Gizmos.color = attackRangeGizmoColor;
-        Gizmos.DrawWireSphere(transform.position, GetAttackRange());
+        Gizmos.DrawWireSphere(transform.position, attackRange);
 
         Gizmos.color = retreatDistanceGizmoColor;
-        Gizmos.DrawWireSphere(transform.position, GetRetreatDistance());
+        Gizmos.DrawWireSphere(transform.position, retreatDistance);
     }
 
-    private void UpdateIdle()
+    internal bool HasTarget()
+    {
+        return CurrentTarget != null;
+    }
+
+    internal bool IsTargetInAttackRange()
+    {
+        return GetTargetDistance(CurrentTarget) <= attackRange;
+    }
+
+    internal bool IsTargetTooClose()
+    {
+        return IsTargetTooClose(CurrentTarget);
+    }
+
+    internal bool IsTargetTooClose(Transform target)
+    {
+        return GetTargetDistance(target) <= retreatDistance;
+    }
+
+    internal void Move(Vector2 direction)
+    {
+        movement?.Move(direction, moveSpeed);
+    }
+
+    internal void MoveTowardTarget()
     {
         if (HasTarget())
         {
-            ChangeState(EnemyState.Alert);
-            return;
-        }
-
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer <= 0f)
-        {
-            ChangeState(EnemyState.Wander);
+            movement?.MoveToward(CurrentTarget.position, moveSpeed);
         }
     }
 
-    private void UpdateWander()
+    internal void MoveAwayFromTarget()
     {
         if (HasTarget())
         {
-            ChangeState(EnemyState.Alert);
-            return;
-        }
-
-        movement?.Move(wanderDirection, moveSpeed);
-
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer <= 0f)
-        {
-            ChangeState(EnemyState.Idle);
+            movement?.MoveAwayFrom(CurrentTarget.position, moveSpeed);
         }
     }
 
-    private void UpdateAlert()
-    {
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        AimAtTarget();
-        UpdateAlertVisual();
-
-        if (IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Retreat);
-            return;
-        }
-
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer <= 0f)
-        {
-            ChangeState(IsTargetInAttackRange() ? EnemyState.Aim : EnemyState.Chase);
-        }
-    }
-
-    private void UpdateChase()
-    {
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        AimAtTarget();
-
-        if (IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Retreat);
-            return;
-        }
-
-        MoveTowardTarget();
-
-        if (IsTargetInAttackRange())
-        {
-            ChangeState(EnemyState.Aim);
-        }
-    }
-
-    private void UpdateAim()
-    {
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        if (IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Retreat);
-            return;
-        }
-
-        if (!IsTargetInAttackRange())
-        {
-            ChangeState(EnemyState.Chase);
-            return;
-        }
-
-        StopMoving();
-        AimAtTarget();
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer <= 0f)
-        {
-            ChangeState(EnemyState.Fire);
-        }
-    }
-
-    private void UpdateFire()
-    {
-        Transform fireTarget = GetFireTarget();
-
-        if (fireTarget == null)
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        if (IsTargetTooClose(fireTarget))
-        {
-            ChangeState(EnemyState.Retreat);
-            return;
-        }
-
-        StopMoving();
-        AimAtTarget(fireTarget);
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer > 0f)
-        {
-            return;
-        }
-
-        FireAtTarget(fireTarget);
-        firedShotCount++;
-        currentAmmo--;
-
-        if (currentAmmo <= 0)
-        {
-            ChangeState(EnemyState.Reload);
-            return;
-        }
-
-        if (firedShotCount >= burstShotCount)
-        {
-            ChangeState(EnemyState.Cooldown);
-            return;
-        }
-
-        stateTimer = fireCooldown;
-    }
-
-    private void UpdateReload()
-    {
-        StopMoving();
-
-        if (HasTarget())
-        {
-            AimAtTarget();
-        }
-
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer > 0f)
-        {
-            return;
-        }
-
-        currentAmmo = magazineSize;
-
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-        }
-        else if (IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Retreat);
-        }
-        else
-        {
-            ChangeState(IsTargetInAttackRange() ? EnemyState.Aim : EnemyState.Chase);
-        }
-    }
-
-    private void UpdateRetreat()
-    {
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        AimAtTarget();
-        MoveAwayFromTarget();
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer <= 0f || !IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Cooldown);
-        }
-    }
-
-    private void UpdateCooldown()
-    {
-        if (!HasTarget())
-        {
-            ChangeState(EnemyState.Idle);
-            return;
-        }
-
-        AimAtTarget();
-
-        if (IsTargetTooClose())
-        {
-            ChangeState(EnemyState.Retreat);
-            return;
-        }
-
-        stateTimer -= Time.deltaTime;
-
-        if (stateTimer > 0f)
-        {
-            return;
-        }
-
-        ChangeState(IsTargetInAttackRange() ? EnemyState.Aim : EnemyState.Chase);
-    }
-
-    private void ChangeState(EnemyState nextState)
-    {
-        bool wasFiring = currentState == EnemyState.Fire;
-        currentState = nextState;
-
-        if (wasFiring && currentState != EnemyState.Fire)
-        {
-            holdShoot?.EndHold();
-        }
-
-        switch (currentState)
-        {
-            case EnemyState.Idle:
-                StopMoving();
-                HideAlert();
-                aiming?.AimForward();
-                stateTimer = idleTime;
-                break;
-            case EnemyState.Wander:
-                HideAlert();
-                wanderDirection = Random.value < 0.5f ? Vector2.left : Vector2.right;
-                aiming?.Face(wanderDirection);
-                stateTimer = wanderTime;
-                break;
-            case EnemyState.Alert:
-                StopMoving();
-                stateTimer = alertTime;
-                ShowAlert();
-                break;
-            case EnemyState.Aim:
-                StopMoving();
-                HideAlert();
-                stateTimer = aimTime;
-                break;
-            case EnemyState.Fire:
-                StopMoving();
-                HideAlert();
-                firedShotCount = 0;
-                stateTimer = 0f;
-                holdShoot?.BeginHold(CurrentTarget);
-                break;
-            case EnemyState.Reload:
-                StopMoving();
-                HideAlert();
-                stateTimer = reloadTime;
-                break;
-            case EnemyState.Retreat:
-                HideAlert();
-                stateTimer = retreatTime;
-                break;
-            case EnemyState.Cooldown:
-                StopMoving();
-                HideAlert();
-                stateTimer = cooldown;
-                break;
-            case EnemyState.Dead:
-                StopMoving();
-                HideAlert();
-                break;
-            default:
-                HideAlert();
-                break;
-        }
-    }
-
-    private bool HasTarget()
-    {
-        return vision != null && vision.currentTarget != null;
-    }
-
-    private float GetTargetDistance()
-    {
-        if (!HasTarget())
-        {
-            return float.MaxValue;
-        }
-
-        return Vector2.Distance(transform.position, vision.currentTarget.position);
-    }
-
-    private bool IsTargetInAttackRange()
-    {
-        return GetTargetDistance() <= GetAttackRange();
-    }
-
-    private bool IsTargetTooClose()
-    {
-        return GetTargetDistance() <= GetRetreatDistance();
-    }
-
-    private bool IsTargetTooClose(Transform target)
-    {
-        return target != null
-            && Vector2.Distance(transform.position, target.position) <= GetRetreatDistance();
-    }
-
-    private float GetAttackRange()
-    {
-        return attackRange;
-    }
-
-    private float GetRetreatDistance()
-    {
-        return retreatDistance;
-    }
-
-    private Vector2 GetDirectionToTarget()
-    {
-        if (!HasTarget())
-        {
-            return Vector2.zero;
-        }
-
-        Vector2 direction = vision.currentTarget.position - transform.position;
-        return direction.sqrMagnitude <= Mathf.Epsilon ? Vector2.zero : direction.normalized;
-    }
-
-    private void MoveTowardTarget()
-    {
-        if (HasTarget())
-        {
-            movement?.MoveToward(vision.currentTarget.position, moveSpeed);
-        }
-    }
-
-    private void MoveAwayFromTarget()
-    {
-        if (HasTarget())
-        {
-            movement?.MoveAwayFrom(vision.currentTarget.position, moveSpeed);
-        }
-    }
-
-    private void StopMoving()
+    internal void StopMoving()
     {
         movement?.Stop();
     }
 
-    private void AimAtTarget()
+    internal void AimAtTarget()
     {
         AimAtTarget(CurrentTarget);
     }
 
-    private void AimAtTarget(Transform target)
+    internal void AimAtTarget(Transform target)
     {
         if (target == null)
         {
@@ -543,15 +176,23 @@ public class EnemyController : MonoBehaviour
 
         Vector2 direction = target.position - transform.position;
 
-        if (direction.sqrMagnitude <= Mathf.Epsilon)
+        if (direction.sqrMagnitude > Mathf.Epsilon)
         {
-            return;
+            aiming?.Aim(direction.normalized);
         }
-
-        aiming?.Aim(direction.normalized);
     }
 
-    private Transform GetFireTarget()
+    internal void AimForward()
+    {
+        aiming?.AimForward();
+    }
+
+    internal void Face(Vector2 direction)
+    {
+        aiming?.Face(direction);
+    }
+
+    internal Transform GetFireTarget()
     {
         if (HasTarget())
         {
@@ -561,12 +202,37 @@ public class EnemyController : MonoBehaviour
         return holdShoot != null ? holdShoot.HeldTarget : null;
     }
 
-    private void FireAtTarget(Transform target)
+    internal void FireAtTarget(Transform target)
     {
         enemyFire?.FireAt(target);
     }
 
-    private void ShowAlert()
+    internal void BeginHold()
+    {
+        holdShoot?.BeginHold(CurrentTarget);
+    }
+
+    internal void EndHold()
+    {
+        holdShoot?.EndHold();
+    }
+
+    internal float GetReloadDuration()
+    {
+        return aiming != null ? aiming.GetReloadDuration(reloadTime) : reloadTime;
+    }
+
+    internal void BeginReload()
+    {
+        aiming?.BeginReload();
+    }
+
+    internal void UpdateReload(float elapsedTime)
+    {
+        aiming?.UpdateReload(elapsedTime, reloadTime);
+    }
+
+    internal void ShowAlert()
     {
         if (alertRenderer == null)
         {
@@ -579,7 +245,7 @@ public class EnemyController : MonoBehaviour
         alertRenderer.color = color;
     }
 
-    private void HideAlert()
+    internal void HideAlert()
     {
         if (alertRenderer == null)
         {
@@ -592,16 +258,23 @@ public class EnemyController : MonoBehaviour
         alertRenderer.enabled = false;
     }
 
-    private void UpdateAlertVisual()
+    internal void UpdateAlertVisual(float timeRemaining)
     {
         if (alertRenderer == null)
         {
             return;
         }
 
-        float alpha = alertTime > 0f ? Mathf.Clamp01(stateTimer / alertTime) : 0f;
+        float alpha = alertTime > 0f ? Mathf.Clamp01(timeRemaining / alertTime) : 0f;
         Color color = alertRenderer.color;
         color.a = alpha;
         alertRenderer.color = color;
+    }
+
+    private float GetTargetDistance(Transform target)
+    {
+        return target != null
+            ? Vector2.Distance(transform.position, target.position)
+            : float.MaxValue;
     }
 }

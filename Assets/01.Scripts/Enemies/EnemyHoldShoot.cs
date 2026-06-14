@@ -1,7 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(EnemyController))]
-[RequireComponent(typeof(EnemyVision2D))]
 public class EnemyHoldShoot : MonoBehaviour
 {
     [Header("References")]
@@ -9,7 +7,7 @@ public class EnemyHoldShoot : MonoBehaviour
     [SerializeField] private EnemyVision2D vision;
 
     [Header("Hold Shoot")]
-    [SerializeField, Min(0f)] private float holdDuration = 1.5f;
+    [SerializeField] private float holdDuration = 1.5f;
 
     private Transform heldTarget;
     private float holdTimer;
