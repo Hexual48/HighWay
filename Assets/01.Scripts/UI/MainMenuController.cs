@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuController : MonoBehaviour
 {
-    private const string GameSceneName = "MainScene";
+    private const string GameSceneName = "InGame";
 
     public void PlayGame()
     {

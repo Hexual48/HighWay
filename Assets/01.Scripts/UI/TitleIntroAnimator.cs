@@ -1,9 +1,18 @@
-using System.Collections;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class TitleIntroAnimator : MonoBehaviour
 {
+    private const string MainMenuSceneName = "MainMenu";
+    private const float BlinkDuration = 0.75f;
+    private const float BlinkHoldDuration = 0.15f;
+    private const float RotationBaseChance = 0.1f;
+    private const float RotationChanceIncrease = 0.05f;
+    private const float RotationAngle = 10f;
+    private const float PressedScaleX = 1.12f;
+    private const float PressedScaleY = 0.65f;
+
     [Header("Title")]
     [SerializeField] private Transform highTitle;
     [SerializeField] private Transform wayTitle;
@@ -16,29 +25,35 @@ public class TitleIntroAnimator : MonoBehaviour
     [SerializeField] private SpriteRenderer clickToStart;
     [SerializeField] private float clickTextFadeDuration = 0.5f;
     [SerializeField] private float clickTextDelay = 0.2f;
+    [SerializeField] private float pressEffectDuration = 0.55f;
 
-    [Header("Click To Start Effects")]
-    [SerializeField, Range(0f, 1f)] private float blinkMinAlpha = 0.35f;
-    [SerializeField] private float blinkDuration = 0.75f;
-    [SerializeField] private Vector2 effectInterval = new(1.5f, 3f);
-    [SerializeField, Range(0f, 1f)] private float rotationChance = 0.25f;
-    [SerializeField] private float rotationAngle = 10f;
-    [SerializeField] private Vector2 pressedScale = new(1.12f, 0.65f);
+    [Header("Screen Close")]
+    [SerializeField] private Transform fadeUp;
+    [SerializeField] private Transform fadeDown;
+    [SerializeField] private float fadeStartOffset = 5f;
+    [SerializeField] private float screenCloseDuration = 0.6f;
+    [SerializeField] private Ease screenCloseEase = Ease.InOutCubic;
 
-    private Sequence introSequence;
-    private Sequence blinkSequence;
-    private Sequence rotationSequence;
-    private Sequence clickSequence;
-    private Coroutine effectCoroutine;
-    private Vector3 originalClickScale;
-    private Quaternion originalClickRotation;
+    private Tween introTween;
+    private Tween idleTween;
+    private Tween pressTween;
+    private Tween closeTween;
+    private Vector3 highTarget;
+    private Vector3 wayTarget;
+    private Vector3 clickScale;
+    private Quaternion clickRotation;
+    private float rotationChance;
     private bool canClick;
+
+    private Transform ClickTransform => clickToStart.transform;
 
     private void Awake()
     {
-        originalClickScale = clickToStart.transform.localScale;
-        originalClickRotation = clickToStart.transform.localRotation;
-        SetClickToStartAlpha(0f);
+        highTarget = highTitle.localPosition;
+        wayTarget = wayTitle.localPosition;
+        clickScale = ClickTransform.localScale;
+        clickRotation = ClickTransform.localRotation;
+        SetAlpha(0f);
     }
 
     private void Start()
@@ -49,157 +64,107 @@ public class TitleIntroAnimator : MonoBehaviour
     private void Update()
     {
         if (canClick && Input.GetMouseButtonDown(0))
-        {
-            PlayClickEffect();
-        }
+            PlayPressEffect();
     }
 
     public void PlayIntro()
     {
-        StopEffects();
+        KillTweens();
         canClick = false;
+        rotationChance = RotationBaseChance;
 
-        Vector3 highTargetPosition = highTitle.localPosition;
-        Vector3 wayTargetPosition = wayTitle.localPosition;
+        highTitle.localPosition = highTarget + Vector3.right * startOffsetX;
+        wayTitle.localPosition = wayTarget + Vector3.right * startOffsetX;
+        SetAlpha(0f);
 
-        highTitle.localPosition = highTargetPosition + Vector3.right * startOffsetX;
-        wayTitle.localPosition = wayTargetPosition + Vector3.right * startOffsetX;
-
-        SetClickToStartAlpha(0f);
-
-        introSequence = DOTween.Sequence();
-
-        Tween highMove = highTitle
-            .DOLocalMove(highTargetPosition, moveDuration)
-            .SetEase(moveEase);
-
-        Tween wayMove = wayTitle
-            .DOLocalMove(wayTargetPosition, moveDuration)
-            .SetEase(moveEase)
-            .SetDelay(wayDelay);
-
-        introSequence.Append(highMove);
-        introSequence.Join(wayMove);
-
-        introSequence.AppendInterval(clickTextDelay);
-        introSequence.Append(
-            clickToStart
-                .DOFade(1f, clickTextFadeDuration)
-                .SetEase(Ease.OutQuad));
-
-        introSequence.AppendCallback(StartEffects);
+        introTween = DOTween.Sequence()
+            .Append(highTitle.DOLocalMove(highTarget, moveDuration).SetEase(moveEase))
+            .Join(wayTitle.DOLocalMove(wayTarget, moveDuration).SetEase(moveEase).SetDelay(wayDelay))
+            .AppendInterval(clickTextDelay)
+            .Append(clickToStart.DOFade(1f, clickTextFadeDuration).SetEase(Ease.OutQuad))
+            .OnComplete(() =>
+            {
+                canClick = true;
+                PlayNextIdleEffect();
+            });
     }
 
-    private void StartEffects()
+    private void PlayNextIdleEffect()
     {
-        canClick = true;
-        effectCoroutine = StartCoroutine(PlayRandomEffects());
-    }
-
-    private IEnumerator PlayRandomEffects()
-    {
-        while (true)
+        if (Random.value < rotationChance)
         {
-            yield return new WaitForSeconds(Random.Range(effectInterval.x, effectInterval.y));
+            rotationChance = RotationBaseChance;
+            Quaternion tilted = clickRotation * Quaternion.Euler(0f, 0f, -RotationAngle);
 
-            if (Random.value < rotationChance)
-            {
-                yield return PlayRotation();
-            }
-            else
-            {
-                yield return PlayBlink();
-            }
+            idleTween = DOTween.Sequence()
+                .Append(ClickTransform.DOLocalRotateQuaternion(tilted, 0.55f).SetEase(Ease.OutElastic))
+                .Append(ClickTransform.DOLocalRotateQuaternion(clickRotation, 0.3f).SetEase(Ease.OutSine))
+                .OnComplete(PlayNextIdleEffect);
+            return;
         }
+
+        rotationChance += RotationChanceIncrease;
+        idleTween = DOTween.Sequence()
+            .Append(clickToStart.DOFade(0f, BlinkDuration * 0.5f).SetEase(Ease.InOutSine))
+            .AppendInterval(BlinkHoldDuration)
+            .Append(clickToStart.DOFade(1f, BlinkDuration * 0.5f).SetEase(Ease.InOutSine))
+            .OnComplete(PlayNextIdleEffect);
     }
 
-    private IEnumerator PlayBlink()
+    private void PlayPressEffect()
     {
-        blinkSequence = DOTween.Sequence();
-        blinkSequence.Append(
-            clickToStart
-                .DOFade(blinkMinAlpha, blinkDuration * 0.5f)
-                .SetEase(Ease.InOutSine));
-        blinkSequence.Append(
-            clickToStart
-                .DOFade(1f, blinkDuration * 0.5f)
-                .SetEase(Ease.InOutSine));
+        canClick = false;
+        idleTween?.Kill();
+        pressTween?.Kill();
+        SetAlpha(1f);
 
-        yield return blinkSequence.WaitForCompletion();
+        Vector3 pressedScale = new(
+            clickScale.x * PressedScaleX,
+            clickScale.y * PressedScaleY,
+            clickScale.z);
+
+        ClickTransform.localScale = clickScale;
+        ClickTransform.localRotation = clickRotation;
+
+        pressTween = DOTween.Sequence()
+            .Append(ClickTransform.DOScale(pressedScale, pressEffectDuration * 0.2f).SetEase(Ease.OutQuad))
+            .Append(ClickTransform.DOScale(clickScale, pressEffectDuration * 0.8f).SetEase(Ease.OutBounce))
+            .OnComplete(PlayScreenClose);
     }
 
-    private IEnumerator PlayRotation()
+    private void PlayScreenClose()
     {
-        Quaternion rotatedRotation =
-            originalClickRotation * Quaternion.Euler(0f, 0f, -rotationAngle);
+        Vector3 upTarget = new(fadeUp.localPosition.x, 2.5f, fadeUp.localPosition.z);
+        Vector3 downTarget = new(fadeDown.localPosition.x, -2.5f, fadeDown.localPosition.z);
 
-        rotationSequence = DOTween.Sequence();
-        rotationSequence.Append(
-            clickToStart.transform
-                .DOLocalRotateQuaternion(rotatedRotation, 0.55f)
-                .SetEase(Ease.OutElastic));
-        rotationSequence.Append(
-            clickToStart.transform
-                .DOLocalRotateQuaternion(originalClickRotation, 0.3f)
-                .SetEase(Ease.OutSine));
-        rotationSequence.OnComplete(() =>
-        {
-            clickToStart.transform.localRotation = originalClickRotation;
-        });
+        fadeUp.localPosition = upTarget + Vector3.up * fadeStartOffset;
+        fadeDown.localPosition = downTarget + Vector3.down * fadeStartOffset;
+        fadeUp.gameObject.SetActive(true);
+        fadeDown.gameObject.SetActive(true);
 
-        yield return rotationSequence.WaitForCompletion();
+        closeTween = DOTween.Sequence()
+            .Append(fadeUp.DOLocalMove(upTarget, screenCloseDuration).SetEase(screenCloseEase))
+            .Join(fadeDown.DOLocalMove(downTarget, screenCloseDuration).SetEase(screenCloseEase))
+            .OnComplete(() => SceneManager.LoadScene(MainMenuSceneName));
     }
 
-    private void PlayClickEffect()
-    {
-        clickSequence?.Kill();
-        clickToStart.transform.localScale = originalClickScale;
-
-        Vector3 squashScale = new(
-            originalClickScale.x * pressedScale.x,
-            originalClickScale.y * pressedScale.y,
-            originalClickScale.z);
-
-        clickSequence = DOTween.Sequence();
-        clickSequence.Append(
-            clickToStart.transform
-                .DOScale(squashScale, 0.1f)
-                .SetEase(Ease.OutQuad));
-        clickSequence.Append(
-            clickToStart.transform
-                .DOScale(originalClickScale, 0.45f)
-                .SetEase(Ease.OutBounce));
-    }
-
-    private void SetClickToStartAlpha(float alpha)
+    private void SetAlpha(float alpha)
     {
         Color color = clickToStart.color;
         color.a = alpha;
         clickToStart.color = color;
     }
 
-    private void StopEffects()
+    private void KillTweens()
     {
-        canClick = false;
-
-        introSequence?.Kill();
-        blinkSequence?.Kill();
-        rotationSequence?.Kill();
-        clickSequence?.Kill();
-
-        if (effectCoroutine != null)
-        {
-            StopCoroutine(effectCoroutine);
-            effectCoroutine = null;
-        }
-
-        SetClickToStartAlpha(1f);
-        clickToStart.transform.localScale = originalClickScale;
-        clickToStart.transform.localRotation = originalClickRotation;
+        introTween?.Kill();
+        idleTween?.Kill();
+        pressTween?.Kill();
+        closeTween?.Kill();
     }
 
     private void OnDestroy()
     {
-        StopEffects();
+        KillTweens();
     }
 }
