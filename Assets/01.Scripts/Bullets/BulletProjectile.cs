@@ -9,6 +9,8 @@ public class BulletProjectile : MonoBehaviour
 
     private Rigidbody2D rb;
     private Transform owner;
+    private Vector2 startPosition;
+    private float maxTravelDistance;
     private int damage;
     private int penetration;
 
@@ -17,9 +19,26 @@ public class BulletProjectile : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
     }
 
-    public void Launch(Vector2 direction, float speed, int damageValue, int penetrationValue, Color trailColor, Transform ownerTransform)
+    private void Update()
+    {
+        if (maxTravelDistance <= 0f)
+        {
+            return;
+        }
+
+        float maxTravelDistanceSqr = maxTravelDistance * maxTravelDistance;
+
+        if (((Vector2)transform.position - startPosition).sqrMagnitude >= maxTravelDistanceSqr)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void Launch(Vector2 direction, float speed, int damageValue, int penetrationValue, Color trailColor, Transform ownerTransform, float maxDistance = 0f)
     {
         owner = ownerTransform;
+        startPosition = transform.position;
+        maxTravelDistance = maxDistance;
         damage = damageValue;
         penetration = penetrationValue;
 
@@ -30,8 +49,11 @@ public class BulletProjectile : MonoBehaviour
 
         if (trail != null)
         {
-            trail.startColor = trailColor;
-            trail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
+            float startAlpha = trailColor.a <= 0f ? 1f : trailColor.a;
+            Color visibleTrailColor = new Color(trailColor.r, trailColor.g, trailColor.b, startAlpha);
+
+            trail.startColor = visibleTrailColor;
+            trail.endColor = new Color(visibleTrailColor.r, visibleTrailColor.g, visibleTrailColor.b, 0f);
         }
 
         Destroy(gameObject, lifeTime);
@@ -56,6 +78,15 @@ public class BulletProjectile : MonoBehaviour
     {
         if (owner != null && hitTransform.IsChildOf(owner))
         {
+            return;
+        }
+
+        CoverObstacle cover = hitTransform.GetComponentInParent<CoverObstacle>();
+
+        if (cover != null && cover.BlocksBullet)
+        {
+            cover.TakeBulletHit(damage);
+            Destroy(gameObject);
             return;
         }
 

@@ -7,7 +7,6 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private EnemyMovement movement;
     [SerializeField] private EnemyFire enemyFire;
     [SerializeField] private EnemyAiming aiming;
-    [SerializeField] private EnemyHoldShoot holdShoot;
 
     [Header("State Time")]
     [SerializeField] private float idleTime = 1f;
@@ -76,11 +75,6 @@ public class EnemyController : MonoBehaviour
         if (aiming == null)
         {
             aiming = GetComponent<EnemyAiming>();
-        }
-
-        if (holdShoot == null)
-        {
-            holdShoot = GetComponent<EnemyHoldShoot>();
         }
 
         if (alertRenderer == null)
@@ -192,29 +186,9 @@ public class EnemyController : MonoBehaviour
         aiming?.Face(direction);
     }
 
-    internal Transform GetFireTarget()
-    {
-        if (HasTarget())
-        {
-            return CurrentTarget;
-        }
-
-        return holdShoot != null ? holdShoot.HeldTarget : null;
-    }
-
     internal void FireAtTarget(Transform target)
     {
         enemyFire?.FireAt(target);
-    }
-
-    internal void BeginHold()
-    {
-        holdShoot?.BeginHold(CurrentTarget);
-    }
-
-    internal void EndHold()
-    {
-        holdShoot?.EndHold();
     }
 
     internal float GetReloadDuration()

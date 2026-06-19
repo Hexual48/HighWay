@@ -79,13 +79,7 @@ public sealed class EnemyMachine
 
     public void ChangeState(State nextState)
     {
-        bool wasFiring = currentState == State.Fire;
         currentState = nextState;
-
-        if (wasFiring && currentState != State.Fire)
-        {
-            controller.EndHold();
-        }
 
         switch (currentState)
         {
@@ -116,7 +110,6 @@ public sealed class EnemyMachine
                 controller.HideAlert();
                 firedShotCount = 0;
                 stateTimer = 0f;
-                controller.BeginHold();
                 break;
             case State.Reload:
                 controller.StopMoving();
@@ -257,7 +250,7 @@ public sealed class EnemyMachine
 
     private void UpdateFire(float deltaTime)
     {
-        Transform fireTarget = controller.GetFireTarget();
+        Transform fireTarget = controller.CurrentTarget;
 
         if (fireTarget == null)
         {

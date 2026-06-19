@@ -16,13 +16,6 @@ public class MainMenuOpenAnimator : MonoBehaviour
     [SerializeField] private float openDuration = 0.6f;
     [SerializeField] private Ease openEase = Ease.InOutCubic;
 
-    [Header("Camera Zoom")]
-    [SerializeField] private Camera menuCamera;
-    [SerializeField] private float zoomOutSize = 30f;
-    [SerializeField] private float zoomDefaultSize = 5f;
-    [SerializeField] private float zoomDuration = 1.2f;
-    [SerializeField, Min(0.1f)] private float zoomReturnSpeedMultiplier = 2f;
-
     private Tween openTween;
 
     private void Awake()
@@ -53,13 +46,6 @@ public class MainMenuOpenAnimator : MonoBehaviour
             .Append(fadeUp.DOMove(upTarget, openDuration).SetEase(openEase))
             .Join(fadeDown.DOMove(downTarget, openDuration).SetEase(openEase))
             .AppendCallback(() => fadeRoot.gameObject.SetActive(false));
-        /*.Append(menuCamera.DOOrthoSize(zoomOutSize, zoomDuration).SetEase(Ease.InOutBack))
-        .Append(menuCamera
-            .DOOrthoSize(7f, zoomDuration * 0.7f / zoomReturnSpeedMultiplier)
-            .SetEase(Ease.InOutBack))
-        .Append(menuCamera
-            .DOOrthoSize(zoomDefaultSize, zoomDuration * 0.3f / zoomReturnSpeedMultiplier)
-            .SetEase(Ease.OutBounce));*/
     }
 
     private static void SetAlpha(SpriteRenderer spriteRenderer, float alpha)

@@ -1,13 +1,16 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyVision2D : MonoBehaviour
 {
+    private static readonly HashSet<EnemyVision2D> ActiveVisions = new HashSet<EnemyVision2D>();
     private const int GizmoSegmentCount = 16;
 
     [Header("DetectRange")]
     [SerializeField] private Transform origin;
     [SerializeField, Min(0.1f)] private float viewDistance = 6f;
     [SerializeField, Range(1f, 360f)] private float viewAngle = 70f;
+    [SerializeField] private EnemyAiming aiming;
 
     [Header("Gizmo")]
     [SerializeField] private Color gizmoColor = new Color(1f, 0f, 0f);
@@ -19,17 +22,38 @@ public class EnemyVision2D : MonoBehaviour
     [SerializeField] private float scanInterval = 0.1f;
     [SerializeField] private Vector2 facingDirection = Vector2.right;
 
+    [Header("Shared Detection")]
+    [SerializeField, Min(0f)] private float sharedDetectionRadius = 8f;
+    [SerializeField, Min(0f)] private float sharedDetectionMemory = 1f;
+
     private float scanTimer;
+    private float sharedDetectionTimer;
     public Transform currentTarget;
     
     private void Awake()
     {
         origin = transform;
+
+        if (aiming == null)
+        {
+            aiming = GetComponent<EnemyAiming>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        ActiveVisions.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        ActiveVisions.Remove(this);
     }
     
     private void Update()
     {
         scanTimer -= Time.deltaTime;
+        sharedDetectionTimer = Mathf.Max(0f, sharedDetectionTimer - Time.deltaTime);
 
         if (scanTimer <= 0f)
         {
@@ -106,7 +130,18 @@ public class EnemyVision2D : MonoBehaviour
             }
         }
         
-        currentTarget = detectedTarget;
+        if (detectedTarget != null)
+        {
+            currentTarget = detectedTarget;
+            sharedDetectionTimer = 0f;
+            AlertNearbyEnemies(detectedTarget);
+            return;
+        }
+
+        if (sharedDetectionTimer <= 0f)
+        {
+            currentTarget = null;
+        }
     }
 
     private bool HasObstacle(Vector2 scanOrigin, Vector2 direction, float distance)
@@ -117,6 +152,49 @@ public class EnemyVision2D : MonoBehaviour
         }
 
         return Physics2D.Raycast(scanOrigin, direction, distance, obstacleLayer);
+    }
+
+    private void AlertNearbyEnemies(Transform target)
+    {
+        if (target == null || sharedDetectionRadius <= 0f)
+        {
+            return;
+        }
+
+        Vector2 scanOrigin = origin != null ? origin.position : transform.position;
+        float sharedDetectionRadiusSqr = sharedDetectionRadius * sharedDetectionRadius;
+
+        foreach (EnemyVision2D other in ActiveVisions)
+        {
+            if (other == null || other == this || !other.isActiveAndEnabled)
+            {
+                continue;
+            }
+
+            Vector2 otherPosition = other.origin != null ? other.origin.position : other.transform.position;
+
+            if ((otherPosition - scanOrigin).sqrMagnitude > sharedDetectionRadiusSqr)
+            {
+                continue;
+            }
+
+            other.ReceiveSharedDetection(target);
+        }
+    }
+
+    private void ReceiveSharedDetection(Transform target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        currentTarget = target;
+        sharedDetectionTimer = sharedDetectionMemory;
+
+        Vector2 direction = (Vector2)target.position - (Vector2)transform.position;
+        aiming?.Face(direction);
+        SetFacingDirection(direction);
     }
 
     public void SetFacingDirection(Vector2 direction)

@@ -8,7 +8,16 @@ public class ShotgunPickup : MonoBehaviour
     [SerializeField] private GameObject interactButton;
     [SerializeField] private GameObject displayShotgun;
 
+    [Header("Unlock UI")]
+    [SerializeField] private UnlockPopupMessage unlockPopup;
+    [SerializeField] private Sprite unlockIcon;
+    [TextArea]
+    [SerializeField] private string unlockTitle;
+    [TextArea]
+    [SerializeField] private string unlockMessage;
+
     private GameObject playerHandle;
+    private ShotgunFire playerShotgunFire;
     private bool playerInside;
     private bool pickedUp;
 
@@ -32,6 +41,11 @@ public class ShotgunPickup : MonoBehaviour
         if (interactButton != null)
         {
             interactButton.SetActive(false);
+        }
+
+        if (unlockPopup == null)
+        {
+            unlockPopup = FindFirstObjectByType<UnlockPopupMessage>(FindObjectsInactive.Include);
         }
     }
 
@@ -63,6 +77,7 @@ public class ShotgunPickup : MonoBehaviour
         }
 
         playerHandle = FindChildByName(player, "Handle");
+        playerShotgunFire = player.GetComponentInChildren<ShotgunFire>(true);
         playerInside = true;
 
         if (interactButton != null)
@@ -82,6 +97,7 @@ public class ShotgunPickup : MonoBehaviour
 
         playerInside = false;
         playerHandle = null;
+        playerShotgunFire = null;
 
         if (!pickedUp && interactButton != null)
         {
@@ -103,9 +119,19 @@ public class ShotgunPickup : MonoBehaviour
             playerHandle.SetActive(true);
         }
 
+        if (playerShotgunFire != null)
+        {
+            playerShotgunFire.enabled = true;
+        }
+
         if (interactButton != null)
         {
             interactButton.SetActive(false);
+        }
+
+        if (unlockPopup != null)
+        {
+            unlockPopup.Show(unlockIcon, unlockTitle, unlockMessage);
         }
     }
 

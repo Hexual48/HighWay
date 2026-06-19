@@ -23,6 +23,8 @@ public class EnemyAiming : MonoBehaviour
     private float weaponScaleY;
     private float reloadStartAngle;
     private float currentReloadAngle;
+    private SpriteRenderer[] facingRenderers;
+    private bool[] initialFlipX;
 
     private void Awake()
     {
@@ -36,9 +38,44 @@ public class EnemyAiming : MonoBehaviour
             bodyRenderer = GetComponentInChildren<SpriteRenderer>();
         }
 
+        RefreshFacingRenderers();
+
         if (weaponHandle != null)
         {
             weaponScaleY = Mathf.Abs(weaponHandle.localScale.y);
+        }
+    }
+
+    public void RefreshFacingRenderers()
+    {
+        SpriteRenderer[] childRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+        int rendererCount = 0;
+
+        for (int i = 0; i < childRenderers.Length; i++)
+        {
+            if (!IsWeaponRenderer(childRenderers[i]))
+            {
+                rendererCount++;
+            }
+        }
+
+        facingRenderers = new SpriteRenderer[rendererCount];
+        initialFlipX = new bool[rendererCount];
+
+        int facingRendererIndex = 0;
+
+        for (int i = 0; i < childRenderers.Length; i++)
+        {
+            SpriteRenderer childRenderer = childRenderers[i];
+
+            if (IsWeaponRenderer(childRenderer))
+            {
+                continue;
+            }
+
+            facingRenderers[facingRendererIndex] = childRenderer;
+            initialFlipX[facingRendererIndex] = childRenderer.flipX;
+            facingRendererIndex++;
         }
     }
 
@@ -135,13 +172,26 @@ public class EnemyAiming : MonoBehaviour
 
     private void FaceDirection(Vector2 direction)
     {
-        if (bodyRenderer == null || Mathf.Approximately(direction.x, 0f))
+        if (Mathf.Approximately(direction.x, 0f))
         {
             return;
         }
 
         isFacingRight = direction.x > 0f;
-        bodyRenderer.flipX = defaultFacesRight ? !isFacingRight : isFacingRight;
+        bool flipFromDefault = defaultFacesRight ? !isFacingRight : isFacingRight;
+
+        for (int i = 0; i < facingRenderers.Length; i++)
+        {
+            if (facingRenderers[i] != null)
+            {
+                facingRenderers[i].flipX = initialFlipX[i] ^ flipFromDefault;
+            }
+        }
+    }
+
+    private bool IsWeaponRenderer(SpriteRenderer spriteRenderer)
+    {
+        return weaponHandle != null && spriteRenderer.transform.IsChildOf(weaponHandle);
     }
 
     private void AimWeapon(Vector2 direction)

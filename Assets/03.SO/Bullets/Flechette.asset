@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 972b130034a23ef41a451b9dcdbcbf70, type: 3}
+  m_Name: Flechette
+  m_EditorClassIdentifier: 
+  ammoName: Flechette
+  unlockIcon: {fileID: 3328856776763393257, guid: ef3e0e059397824429f4b52d8e260811, type: 3}
+  unlockTitle: <color=#34BCAC>Flechette Round</color> Unlocked!
+  unlockDescription: 'Fires multiple pellets in a wide spread.
+
+    Especially powerful
+    at close range.'
+  spreadAngle: 45
+  pelletCount: 16
+  damagePerPellet: 8
+  recoilForce: 15
+  penetration: 0
+  color: {r: 0.20392159, g: 0.7372549, b: 0.6745098, a: 0}
