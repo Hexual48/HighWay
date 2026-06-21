@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 7727702069673473966}
   - component: {fileID: 5006584304365172679}
   - component: {fileID: 1052764545917399292}
+  - component: {fileID: 877001001001001001}
   m_Layer: 9
   m_Name: Infantry
   m_TagString: Untagged
@@ -33,7 +34,7 @@ Transform:
   m_GameObject: {fileID: 3895898829680832545}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 106.70055, y: 18.59945, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -112,6 +113,7 @@ MonoBehaviour:
   origin: {fileID: 8282322572160648437}
   viewDistance: 35
   viewAngle: 150
+  aiming: {fileID: 0}
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
   targetLineGizmoColor: {r: 0, g: 1, b: 0, a: 1}
   targetLayer:
@@ -122,6 +124,8 @@ MonoBehaviour:
     m_Bits: 136
   scanInterval: 0.1
   facingDirection: {x: 1, y: 0}
+  sharedDetectionRadius: 8
+  sharedDetectionMemory: 1
   currentTarget: {fileID: 0}
 --- !u!114 &5307527933363501386
 MonoBehaviour:
@@ -149,6 +153,11 @@ MonoBehaviour:
   fireCooldown: 0.1
   magazineSize: 5
   reloadTime: 1.5
+  audioSource: {fileID: 0}
+  fireClip: {fileID: 8300000, guid: a01abb0fe379f6447a26524467e24e39, type: 3}
+  reloadClip: {fileID: 8300000, guid: f53774fdb96b7d440948e0d959258728, type: 3}
+  fireVolume: 1
+  reloadVolume: 1
   alertRenderer: {fileID: 7431030829090751212}
   moveSpeed: 3
   attackRange: 28
@@ -296,6 +305,25 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &877001001001001001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3895898829680832545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 899e7675bbf79b842984fda36c8b1b23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  controller: {fileID: 5307527933363501386}
+  bodyRenderer: {fileID: 5935746457144467169}
+  weaponHandle: {fileID: 7214951762808847706}
+  headAccessory: {fileID: 6255661420375723512}
+  mask: {fileID: 0}
+  deadSprite: {fileID: 2649847697073447219, guid: 52cef41920292e74cbddbbe5ba4a39ca, type: 3}
+  fadeTime: 0.4
 --- !u!1 &4994274481179879439
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,6 +453,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6255661420375723512}
   - component: {fileID: 8190821338683932202}
+  - component: {fileID: 823553985247873397}
+  - component: {fileID: 910000000000000001}
   m_Layer: 0
   m_Name: Hat
   m_TagString: Untagged
@@ -432,6 +462,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &910000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168546358328584506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d036966c547426c981ad4ade5e8318a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 100
+  armorType: 2
+  shieldBrokenClip: {fileID: 8300000, guid: 757637f10d283334ea013a96828a6d93, type: 3}
+  shieldBrokenVolume: 1
 --- !u!4 &6255661420375723512
 Transform:
   m_ObjectHideFlags: 0
@@ -502,6 +548,84 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!60 &823553985247873397
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168546358328584506}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 3.29, y: 1.56}
+    newSize: {x: 3.29, y: 1.56}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 1.475, y: -0.7}
+      - {x: 1.545, y: -0.69}
+      - {x: 1.615, y: -0.64}
+      - {x: 1.645, y: -0.59}
+      - {x: 1.645, y: -0.29999998}
+      - {x: 1.605, y: -0.29}
+      - {x: 1.5649999, y: -0.22999999}
+      - {x: 1.4649999, y: -0.16}
+      - {x: 1.365, y: 0.04}
+      - {x: 1.2049999, y: 0.25}
+      - {x: 1.035, y: 0.42}
+      - {x: 0.715, y: 0.66999996}
+      - {x: 0.60499996, y: 0.72999996}
+      - {x: 0.49499997, y: 0.78}
+      - {x: -0.355, y: 0.78}
+      - {x: -0.545, y: 0.74}
+      - {x: -0.715, y: 0.64}
+      - {x: -1.015, y: 0.44}
+      - {x: -1.255, y: 0.17}
+      - {x: -1.435, y: -0.26}
+      - {x: -1.505, y: -0.28}
+      - {x: -1.5949999, y: -0.39}
+      - {x: -1.645, y: -0.56}
+      - {x: -1.645, y: -0.74}
+      - {x: -1.555, y: -0.77}
+      - {x: -1.155, y: -0.76}
+      - {x: -0.935, y: -0.78}
+      - {x: -0.745, y: -0.78}
+      - {x: -0.705, y: -0.74}
+      - {x: -0.275, y: -0.74}
+      - {x: 0.59499997, y: -0.71999997}
+  m_UseDelaunayMesh: 0
 --- !u!1 &6479321921316289791
 GameObject:
   m_ObjectHideFlags: 0

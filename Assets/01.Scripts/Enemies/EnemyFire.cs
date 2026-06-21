@@ -28,11 +28,11 @@ public class EnemyFire : MonoBehaviour
 
     public Vector2 FireOrigin => firePoint != null ? firePoint.position : transform.position;
 
-    public void FireAt(Transform target)
+    public bool FireAt(Transform target)
     {
         if (target == null || bulletPrefab == null)
         {
-            return;
+            return false;
         }
 
         Vector2 origin = firePoint.position;
@@ -42,6 +42,7 @@ public class EnemyFire : MonoBehaviour
 
         BulletProjectile bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
         bullet.LaunchEnemy(spreadDirection, bulletSpeed, trailColor, transform);
+        return true;
     }
 
     private void OnDrawGizmos()

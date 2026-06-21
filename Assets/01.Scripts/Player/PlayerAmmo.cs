@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,8 +21,10 @@ public class PlayerAmmo : MonoBehaviour
 
     private readonly HashSet<AmmoData> unlockedAmmos = new HashSet<AmmoData>();
 
-    public AmmoData CurrentAmmo => IsValidAmmoIndex(currentAmmoIndex) ? ammoSlots[currentAmmoIndex].ammoData : null;
+    public AmmoData CurrentAmmo => IsUnlockedAmmoIndex(currentAmmoIndex) ? ammoSlots[currentAmmoIndex].ammoData : null;
     public int CurrentAmmoIndex => currentAmmoIndex;
+    public event Action AmmoChanged;
+    public event Action<int> AmmoSwitched;
 
     private void Awake()
     {
@@ -71,12 +74,43 @@ public class PlayerAmmo : MonoBehaviour
             Debug.Log($"Ammo unlocked: {GetAmmoName(ammoData)}", this);
         }
 
+        if (unlocked)
+        {
+            AmmoChanged?.Invoke();
+        }
+
         return true;
     }
 
     public bool IsAmmoUnlocked(AmmoData ammoData)
     {
         return ammoData != null && unlockedAmmos.Contains(ammoData);
+    }
+
+    public bool CanSelectPreviousAmmo()
+    {
+        for (int i = currentAmmoIndex - 1; i >= 0; i--)
+        {
+            if (IsUnlockedAmmoIndex(i))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool CanSelectNextAmmo()
+    {
+        for (int i = currentAmmoIndex + 1; i < ammoSlots.Count; i++)
+        {
+            if (IsUnlockedAmmoIndex(i))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void SelectPreviousAmmo()
@@ -86,6 +120,7 @@ public class PlayerAmmo : MonoBehaviour
             if (IsUnlockedAmmoIndex(i))
             {
                 SelectAmmoIndex(i);
+                AmmoSwitched?.Invoke(-1);
                 return;
             }
         }
@@ -98,6 +133,7 @@ public class PlayerAmmo : MonoBehaviour
             if (IsUnlockedAmmoIndex(i))
             {
                 SelectAmmoIndex(i);
+                AmmoSwitched?.Invoke(1);
                 return;
             }
         }
@@ -156,6 +192,7 @@ public class PlayerAmmo : MonoBehaviour
         }
 
         currentAmmoIndex = index;
+        AmmoChanged?.Invoke();
 
         if (debugLogSelection)
         {

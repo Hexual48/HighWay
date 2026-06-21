@@ -52,6 +52,12 @@ public class EnemyVision2D : MonoBehaviour
     
     private void Update()
     {
+        if (!IsTargetValid(currentTarget))
+        {
+            currentTarget = null;
+            sharedDetectionTimer = 0f;
+        }
+
         scanTimer -= Time.deltaTime;
         sharedDetectionTimer = Mathf.Max(0f, sharedDetectionTimer - Time.deltaTime);
 
@@ -105,7 +111,7 @@ public class EnemyVision2D : MonoBehaviour
 
         Collider2D targetCollider = Physics2D.OverlapCircle(scanOrigin, viewDistance, targetLayer);
 
-        if (targetCollider != null)
+        if (targetCollider != null && IsTargetValid(targetCollider.transform))
         {
             Vector2 targetPoint = targetCollider.ClosestPoint(scanOrigin);
 
@@ -156,7 +162,7 @@ public class EnemyVision2D : MonoBehaviour
 
     private void AlertNearbyEnemies(Transform target)
     {
-        if (target == null || sharedDetectionRadius <= 0f)
+        if (!IsTargetValid(target) || sharedDetectionRadius <= 0f)
         {
             return;
         }
@@ -184,7 +190,7 @@ public class EnemyVision2D : MonoBehaviour
 
     private void ReceiveSharedDetection(Transform target)
     {
-        if (target == null)
+        if (!IsTargetValid(target))
         {
             return;
         }
@@ -225,5 +231,16 @@ public class EnemyVision2D : MonoBehaviour
         }
 
         facingDirection = directionX > 0f ? Vector2.right : Vector2.left;
+    }
+
+    internal static bool IsTargetValid(Transform target)
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        PlayerHealth playerHealth = target.GetComponentInParent<PlayerHealth>();
+        return playerHealth == null || !playerHealth.IsDead;
     }
 }

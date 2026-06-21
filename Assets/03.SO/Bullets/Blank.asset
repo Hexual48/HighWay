@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Blank
   m_EditorClassIdentifier: 
   ammoName: Blank
+  ammoIcon: {fileID: -4207395798927826736, guid: 75efb41363343e64e88a4fbb0702539b, type: 3}
+  ammoInfoIcon: {fileID: 2480101148916539906, guid: 17d7a29eb95209f448d3c079549f3fcc, type: 3}
   unlockIcon: {fileID: 2480101148916539906, guid: 17d7a29eb95209f448d3c079549f3fcc, type: 3}
   unlockTitle: <color=#3B96D3>Blank Round</color> Unlocked!
   unlockDescription: 'A round that creates extremely strong recoil.

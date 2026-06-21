@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: Pierce
   m_EditorClassIdentifier: 
   ammoName: Pierce
+  ammoIcon: {fileID: -8344587307059258961, guid: 4bff2c96fe9c8c84ebaee4c4ba5c42e5, type: 3}
+  ammoInfoIcon: {fileID: 2426251157331371465, guid: 2f9e995042272424dbb9fc484ea4e0dd, type: 3}
   unlockIcon: {fileID: 2426251157331371465, guid: 2f9e995042272424dbb9fc484ea4e0dd, type: 3}
   unlockTitle: <color=#D7D7D7>Slug Round</color> Unlocked!
-  unlockDescription: 'Fires a single round that pierces through every enemy.
+  unlockDescription: 'Fires a single round that pierces every enemy.
 
     Shines
     when enemies are grouped together.'

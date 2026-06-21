@@ -7,8 +7,12 @@ public class ShotgunPickup : MonoBehaviour
     [Header("Objects")]
     [SerializeField] private GameObject interactButton;
     [SerializeField] private GameObject displayShotgun;
+    [SerializeField] private GameObject playerInterface;
+    [SerializeField] private GameObject bulletUI;
+    [SerializeField] private GameObject speedmeterUI;
 
     [Header("Unlock UI")]
+    [SerializeField] private bool showUnlockPopup;
     [SerializeField] private UnlockPopupMessage unlockPopup;
     [SerializeField] private Sprite unlockIcon;
     [TextArea]
@@ -18,6 +22,7 @@ public class ShotgunPickup : MonoBehaviour
 
     private GameObject playerHandle;
     private ShotgunFire playerShotgunFire;
+    private NewMovement playerMovement;
     private bool playerInside;
     private bool pickedUp;
 
@@ -43,9 +48,23 @@ public class ShotgunPickup : MonoBehaviour
             interactButton.SetActive(false);
         }
 
+        if (playerInterface == null)
+        {
+            GameObject interfaceObject = GameObject.Find("PlayerInterface");
+            playerInterface = interfaceObject;
+        }
+
+        ResolveWeaponUI();
+        SetWeaponUIVisible(false);
+
         if (unlockPopup == null)
         {
             unlockPopup = FindFirstObjectByType<UnlockPopupMessage>(FindObjectsInactive.Include);
+        }
+
+        if (unlockPopup != null)
+        {
+            unlockPopup.gameObject.SetActive(false);
         }
     }
 
@@ -78,6 +97,7 @@ public class ShotgunPickup : MonoBehaviour
 
         playerHandle = FindChildByName(player, "Handle");
         playerShotgunFire = player.GetComponentInChildren<ShotgunFire>(true);
+        playerMovement = player.GetComponentInChildren<NewMovement>();
         playerInside = true;
 
         if (interactButton != null)
@@ -98,6 +118,7 @@ public class ShotgunPickup : MonoBehaviour
         playerInside = false;
         playerHandle = null;
         playerShotgunFire = null;
+        playerMovement = null;
 
         if (!pickedUp && interactButton != null)
         {
@@ -108,6 +129,7 @@ public class ShotgunPickup : MonoBehaviour
     private void PickUpShotgun()
     {
         pickedUp = true;
+        playerMovement?.PlayPickupSound();
 
         if (displayShotgun != null)
         {
@@ -124,14 +146,49 @@ public class ShotgunPickup : MonoBehaviour
             playerShotgunFire.enabled = true;
         }
 
+        SetWeaponUIVisible(true);
+
         if (interactButton != null)
         {
             interactButton.SetActive(false);
         }
 
-        if (unlockPopup != null)
+        if (showUnlockPopup && unlockPopup != null)
         {
             unlockPopup.Show(unlockIcon, unlockTitle, unlockMessage);
+        }
+    }
+
+    private void ResolveWeaponUI()
+    {
+        if (playerInterface == null)
+        {
+            return;
+        }
+
+        if (bulletUI == null)
+        {
+            Transform bulletTransform = playerInterface.transform.Find("BulletUI");
+            bulletUI = bulletTransform != null ? bulletTransform.gameObject : null;
+        }
+
+        if (speedmeterUI == null)
+        {
+            Transform speedmeterTransform = playerInterface.transform.Find("speedmeterUI");
+            speedmeterUI = speedmeterTransform != null ? speedmeterTransform.gameObject : null;
+        }
+    }
+
+    private void SetWeaponUIVisible(bool visible)
+    {
+        if (bulletUI != null)
+        {
+            bulletUI.SetActive(visible);
+        }
+
+        if (speedmeterUI != null)
+        {
+            speedmeterUI.SetActive(visible);
         }
     }
 

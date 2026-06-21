@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Normal
   m_EditorClassIdentifier: 
   ammoName: Normal
+  ammoIcon: {fileID: 7051843679532011341, guid: 46572a085493bc241b317716a0a28e5f, type: 3}
+  ammoInfoIcon: {fileID: 1138711671804298972, guid: c5857d6ea2c914a4bb52b6e2984ba86e, type: 3}
   unlockIcon: {fileID: 1138711671804298972, guid: c5857d6ea2c914a4bb52b6e2984ba86e, type: 3}
-  unlockTitle: <color=#D3322E>Shotgun Round</color> Unlocked!
+  unlockTitle: <color=#D3322E>ShotShell</color> Unlocked!
   unlockDescription: 'A standard shotgun round.
 
     The simple is best.'

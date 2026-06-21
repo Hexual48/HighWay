@@ -5,6 +5,7 @@ public class SpeedometerUI : MonoBehaviour
 {
     [Header("Target")]
     [SerializeField] private Transform target;
+    [SerializeField] private Rigidbody2D targetRigidbody;
     [SerializeField] private bool horizontalOnly;
 
     [Header("Display")]
@@ -12,9 +13,10 @@ public class SpeedometerUI : MonoBehaviour
     [SerializeField] private string speedFormat = "Speed: {0:0.0} u/s";
     [SerializeField, Min(0.02f)] private float refreshInterval = 0.05f;
     [SerializeField, Min(0f)] private float displayMultiplier = 1f;
+    [SerializeField, Min(0f)] private float smoothing = 12f;
 
-    private Vector3 previousPosition;
     private float currentSpeed;
+    private float displayedSpeed;
     private float refreshTimer;
 
     public float CurrentSpeed => currentSpeed;
@@ -25,12 +27,15 @@ public class SpeedometerUI : MonoBehaviour
         {
             target = transform;
         }
+
+        if (targetRigidbody == null)
+        {
+            targetRigidbody = target.GetComponent<Rigidbody2D>();
+        }
     }
 
     private void Start()
     {
-        previousPosition = target != null ? target.position : transform.position;
-
         if (speedText == null)
         {
             speedText = CreateDefaultText();
@@ -39,26 +44,34 @@ public class SpeedometerUI : MonoBehaviour
         UpdateText();
     }
 
-    private void LateUpdate()
+    private void FixedUpdate()
     {
-        if (target == null)
+        if (targetRigidbody == null)
         {
             return;
         }
 
-        Vector3 currentPosition = target.position;
-        Vector3 movement = currentPosition - previousPosition;
+        Vector2 velocity = targetRigidbody.linearVelocity;
 
         if (horizontalOnly)
         {
-            movement.y = 0f;
+            velocity.y = 0f;
         }
 
-        currentSpeed = Time.deltaTime > 0f
-            ? movement.magnitude / Time.deltaTime * displayMultiplier
-            : 0f;
+        currentSpeed = velocity.magnitude * displayMultiplier;
+    }
 
-        previousPosition = currentPosition;
+    private void Update()
+    {
+        if (smoothing > 0f)
+        {
+            displayedSpeed = Mathf.Lerp(displayedSpeed, currentSpeed, 1f - Mathf.Exp(-smoothing * Time.deltaTime));
+        }
+        else
+        {
+            displayedSpeed = currentSpeed;
+        }
+
         refreshTimer -= Time.deltaTime;
 
         if (refreshTimer <= 0f)
@@ -70,7 +83,7 @@ public class SpeedometerUI : MonoBehaviour
 
     private TMP_Text CreateDefaultText()
     {
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = FindFirstObjectByType<Canvas>();
 
         if (canvas == null)
         {
@@ -89,7 +102,7 @@ public class SpeedometerUI : MonoBehaviour
 
         TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
         text.raycastTarget = false;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.alignment = TextAlignmentOptions.TopLeft;
         text.fontSize = 28f;
         text.color = Color.white;
@@ -104,6 +117,6 @@ public class SpeedometerUI : MonoBehaviour
             return;
         }
 
-        speedText.text = string.Format(speedFormat, currentSpeed);
+        speedText.text = string.Format(speedFormat, displayedSpeed);
     }
 }

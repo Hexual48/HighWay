@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class MainMenuOpenAnimator : MonoBehaviour
 {
+    private static bool hasPlayedThisSession;
+
     [SerializeField] private Transform fadeRoot;
     [SerializeField] private Transform fadeUp;
     [SerializeField] private Transform fadeDown;
@@ -18,8 +20,22 @@ public class MainMenuOpenAnimator : MonoBehaviour
 
     private Tween openTween;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionState()
+    {
+        hasPlayedThisSession = false;
+    }
+
     private void Awake()
     {
+        if (hasPlayedThisSession)
+        {
+            SetAlpha(highTitle, 1f);
+            SetAlpha(wayTitle, 1f);
+            fadeRoot.gameObject.SetActive(false);
+            return;
+        }
+
         fadeRoot.gameObject.SetActive(true);
         SetAlpha(highTitle, 0f);
         SetAlpha(wayTitle, 0f);
@@ -27,6 +43,11 @@ public class MainMenuOpenAnimator : MonoBehaviour
 
     private void Start()
     {
+        if (hasPlayedThisSession)
+            return;
+
+        hasPlayedThisSession = true;
+
         Vector3 upTarget = fadeUp.position + Vector3.up * openOffset;
         Vector3 downTarget = fadeDown.position + Vector3.down * openOffset;
 

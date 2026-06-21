@@ -5,6 +5,10 @@ public class AmmoData : ScriptableObject
 {
     public string ammoName;
 
+    [Header("UI")]
+    public Sprite ammoIcon;
+    public Sprite ammoInfoIcon;
+
     [Header("Unlock UI")]
     public Sprite unlockIcon;
     [TextArea]

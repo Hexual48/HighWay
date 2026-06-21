@@ -24,6 +24,14 @@ public class EnemyController : MonoBehaviour
     [SerializeField, Min(1)] private int magazineSize = 5;
     [SerializeField, Min(0f)] private float reloadTime = 1.5f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip fireClip;
+    [Tooltip("Optional. Leave empty for enemies without a reload sound, such as the sniper.")]
+    [SerializeField] private AudioClip reloadClip;
+    [SerializeField, Range(0f, 1f)] private float fireVolume = 1f;
+    [SerializeField, Range(0f, 1f)] private float reloadVolume = 1f;
+
     [Header("Alert Visual")]
     [SerializeField] private SpriteRenderer alertRenderer;
 
@@ -40,9 +48,12 @@ public class EnemyController : MonoBehaviour
 
     public bool IsAiming => machine != null && machine.IsAiming;
     public bool IsFiring => machine != null && machine.IsFiring;
-    public Transform CurrentTarget => vision != null ? vision.currentTarget : null;
+    public Transform CurrentTarget => vision != null && EnemyVision2D.IsTargetValid(vision.currentTarget)
+        ? vision.currentTarget
+        : null;
     public float AimTimeRemaining => machine != null ? machine.AimTimeRemaining : 0f;
     public float AimDuration => aimTime;
+    public bool IsDead => machine != null && machine.CurrentState == EnemyMachine.State.Dead;
 
     internal float IdleTime => idleTime;
     internal float WanderTime => wanderTime;
@@ -76,6 +87,18 @@ public class EnemyController : MonoBehaviour
         {
             aiming = GetComponent<EnemyAiming>();
         }
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
 
         if (alertRenderer == null)
         {
@@ -113,6 +136,22 @@ public class EnemyController : MonoBehaviour
     internal bool HasTarget()
     {
         return CurrentTarget != null;
+    }
+
+    internal void EnterDeadState()
+    {
+        if (machine == null || IsDead)
+        {
+            return;
+        }
+
+        if (vision != null)
+        {
+            vision.currentTarget = null;
+            vision.enabled = false;
+        }
+
+        machine.ChangeState(EnemyMachine.State.Dead);
     }
 
     internal bool IsTargetInAttackRange()
@@ -188,7 +227,10 @@ public class EnemyController : MonoBehaviour
 
     internal void FireAtTarget(Transform target)
     {
-        enemyFire?.FireAt(target);
+        if (enemyFire != null && enemyFire.FireAt(target))
+        {
+            PlayOneShot(fireClip, fireVolume);
+        }
     }
 
     internal float GetReloadDuration()
@@ -199,6 +241,7 @@ public class EnemyController : MonoBehaviour
     internal void BeginReload()
     {
         aiming?.BeginReload();
+        PlayOneShot(reloadClip, reloadVolume);
     }
 
     internal void UpdateReload(float elapsedTime)
@@ -250,5 +293,15 @@ public class EnemyController : MonoBehaviour
         return target != null
             ? Vector2.Distance(transform.position, target.position)
             : float.MaxValue;
+    }
+
+    private void PlayOneShot(AudioClip clip, float volume)
+    {
+        if (audioSource == null || clip == null)
+        {
+            return;
+        }
+
+        audioSource.PlayOneShot(clip, volume * GameSettings.SfxVolume);
     }
 }

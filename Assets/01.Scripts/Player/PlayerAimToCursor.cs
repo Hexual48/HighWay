@@ -14,6 +14,11 @@ public class PlayerAimToCursor : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale <= 0f)
+        {
+            return;
+        }
+
         if (mainCamera == null)
         {
             mainCamera = Camera.main;

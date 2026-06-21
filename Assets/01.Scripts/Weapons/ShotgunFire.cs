@@ -23,7 +23,15 @@ public class ShotgunFire : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip fireClip;
+    [SerializeField] private AudioClip reloadClip;
+    [SerializeField, Range(0f, 1f)] private float fireVolume = 1f;
+    [SerializeField, Range(0f, 1f)] private float reloadVolume = 1f;
+
     private NewMovement movement;
+    private MouseLookCameraTarget cameraTarget;
     private PlayerAmmo playerAmmo;
     private int loadedAmmo;
     private float reloadTimer;
@@ -39,6 +47,8 @@ public class ShotgunFire : MonoBehaviour
     {
         movement = GetComponentInParent<NewMovement>();
         playerAmmo = GetComponentInParent<PlayerAmmo>();
+        Camera mainCamera = Camera.main;
+        cameraTarget = mainCamera != null ? mainCamera.GetComponent<MouseLookCameraTarget>() : null;
         loadedAmmo = maxLoadedAmmo;
 
         if (firePoint == null)
@@ -61,12 +71,18 @@ public class ShotgunFire : MonoBehaviour
             animator = GetComponentInParent<Animator>(true);
         }
 
+        EnsureAudioSource();
         WarnIfAnimatorMissing();
         UpdateAnimatorAmmo();
     }
 
     private void Update()
     {
+        if (Time.timeScale <= 0f)
+        {
+            return;
+        }
+
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
         {
             TryReload();
@@ -75,7 +91,7 @@ public class ShotgunFire : MonoBehaviour
 
     public void OnAttack(InputValue value)
     {
-        if (!isActiveAndEnabled || !value.isPressed)
+        if (Time.timeScale <= 0f || !isActiveAndEnabled || !value.isPressed)
         {
             return;
         }
@@ -85,7 +101,7 @@ public class ShotgunFire : MonoBehaviour
 
     public void OnReload(InputValue value)
     {
-        if (!isActiveAndEnabled || !value.isPressed)
+        if (Time.timeScale <= 0f || !isActiveAndEnabled || !value.isPressed)
         {
             return;
         }
@@ -95,6 +111,12 @@ public class ShotgunFire : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (Time.timeScale <= 0f)
+        {
+            fireQueued = false;
+            return;
+        }
+
         UpdateReload();
 
         if (!fireQueued)
@@ -122,10 +144,17 @@ public class ShotgunFire : MonoBehaviour
 
         if (loadedAmmo <= 0)
         {
+            if (GameSettings.ClickReloadEnabled)
+            {
+                TryReload();
+            }
+
             return;
         }
 
         Fire(firePoint.right, ammoData);
+        cameraTarget?.ShakeFromShot();
+        PlayOneShot(fireClip, fireVolume);
         loadedAmmo--;
         UpdateAnimatorAmmo();
     }
@@ -159,7 +188,7 @@ public class ShotgunFire : MonoBehaviour
 
     private void TryReload()
     {
-        if (loadedAmmo < maxLoadedAmmo)
+        if (GetCurrentAmmo() != null && loadedAmmo < maxLoadedAmmo)
         {
             BeginReload();
         }
@@ -167,13 +196,14 @@ public class ShotgunFire : MonoBehaviour
 
     private void BeginReload()
     {
-        if (isReloading || loadedAmmo >= maxLoadedAmmo)
+        if (GetCurrentAmmo() == null || isReloading || loadedAmmo >= maxLoadedAmmo)
         {
             return;
         }
 
         isReloading = true;
         reloadTimer = reloadTime;
+        PlayOneShot(reloadClip, reloadVolume);
 
         if (animator != null)
         {
@@ -227,11 +257,31 @@ public class ShotgunFire : MonoBehaviour
 
     private AmmoData GetCurrentAmmo()
     {
-        if (playerAmmo != null && playerAmmo.CurrentAmmo != null)
+        if (playerAmmo != null)
         {
             return playerAmmo.CurrentAmmo;
         }
 
         return currentAmmo;
+    }
+
+    private void PlayOneShot(AudioClip clip, float volume)
+    {
+        if (audioSource == null || clip == null)
+        {
+            return;
+        }
+
+        audioSource.PlayOneShot(clip, volume * GameSettings.SfxVolume);
+    }
+
+    private void EnsureAudioSource()
+    {
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
     }
 }

@@ -16,6 +16,7 @@ public class AmmoPickup : MonoBehaviour
     [SerializeField] private UnlockPopupMessage unlockPopup;
 
     private PlayerAmmo playerAmmo;
+    private NewMovement playerMovement;
     private bool playerInside;
     private bool pickedUp;
 
@@ -75,6 +76,7 @@ public class AmmoPickup : MonoBehaviour
         }
 
         playerAmmo = player.GetComponentInChildren<PlayerAmmo>();
+        playerMovement = player.GetComponentInChildren<NewMovement>();
         playerInside = true;
 
         if (interactButton != null)
@@ -94,6 +96,7 @@ public class AmmoPickup : MonoBehaviour
 
         playerInside = false;
         playerAmmo = null;
+        playerMovement = null;
 
         if (!pickedUp && interactButton != null)
         {
@@ -111,6 +114,7 @@ public class AmmoPickup : MonoBehaviour
         }
 
         pickedUp = true;
+        playerMovement?.PlayPickupSound();
 
         if (!wasUnlocked && unlockPopup != null)
         {

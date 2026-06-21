@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Flechette
   m_EditorClassIdentifier: 
   ammoName: Flechette
+  ammoIcon: {fileID: 588962197925595136, guid: 3d736567d923f5c40acf2ecf2554291a, type: 3}
+  ammoInfoIcon: {fileID: 3328856776763393257, guid: ef3e0e059397824429f4b52d8e260811, type: 3}
   unlockIcon: {fileID: 3328856776763393257, guid: ef3e0e059397824429f4b52d8e260811, type: 3}
   unlockTitle: <color=#34BCAC>Flechette Round</color> Unlocked!
   unlockDescription: 'Fires multiple pellets in a wide spread.
