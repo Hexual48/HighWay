@@ -87,10 +87,10 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: -6199720543617963891, guid: bf784977ea53ff44d969a7faad26be04, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.03, y: 3.02}
@@ -112,7 +112,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   origin: {fileID: 387556596705659420}
-  viewDistance: 35
+  viewDistance: 40
   viewAngle: 150
   aiming: {fileID: 0}
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
@@ -161,7 +161,7 @@ MonoBehaviour:
   reloadVolume: 1
   alertRenderer: {fileID: 7463605509056751610}
   moveSpeed: 2
-  attackRange: 35
+  attackRange: 38
   retreatDistance: 0
   attackRangeGizmoColor: {r: 0, g: 0, b: 1, a: 1}
   retreatDistanceGizmoColor: {r: 0, g: 1, b: 1, a: 1}
@@ -180,7 +180,8 @@ MonoBehaviour:
   vision: {fileID: 4918135300536732545}
   bodyRenderer: {fileID: 4034709229136215096}
   weaponHandle: {fileID: 101183188516771955}
-  defaultFacesRight: 1
+  defaultFacesRight: 0
+  initialFacesRight: 0
   rightReloadAngle: -45
   leftReloadAngle: 45
   lowerDuration: 0.2
@@ -353,7 +354,7 @@ Transform:
   m_GameObject: {fileID: 2607032377258262416}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.03, y: 0.13299982, z: 0}
+  m_LocalPosition: {x: 0.03, y: 0.13299982, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -403,10 +404,10 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 2
   m_Sprite: {fileID: -8915860984537711660, guid: 1576a753f278d3f488e0825d48699e4a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.49, y: 3.25}
@@ -547,7 +548,7 @@ Transform:
   m_GameObject: {fileID: 3415532962749678160}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.03, y: 0.61700016, z: 0}
+  m_LocalPosition: {x: -0.03, y: 0.61700016, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -599,7 +600,7 @@ SpriteRenderer:
   m_SortingOrder: 2
   m_Sprite: {fileID: -2132637280281834630, guid: 7bffa80690ff05440a5786fe9ad4c377, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.4, y: 2.16}
@@ -785,7 +786,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 3b25278aa2de79047be8e3d561476e6d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -856,7 +857,7 @@ Transform:
   m_GameObject: {fileID: 6082692692298517764}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.44, z: 0}
+  m_LocalPosition: {x: 0, y: -0.44, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -905,10 +906,10 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 2
   m_Sprite: {fileID: 3820630057124727887, guid: b472aba042af64147a88d375de60b54a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1.97}
@@ -1027,14 +1028,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6393476010785490366}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: -0.6, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: -1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5985980222048401498}
   m_Father: {fileID: 387556596705659420}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!1 &7061639426442733072
 GameObject:
   m_ObjectHideFlags: 0

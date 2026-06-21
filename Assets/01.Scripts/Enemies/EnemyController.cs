@@ -154,6 +154,20 @@ public class EnemyController : MonoBehaviour
         machine.ChangeState(EnemyMachine.State.Dead);
     }
 
+    internal void Respawn()
+    {
+        if (vision != null)
+        {
+            vision.currentTarget = null;
+            vision.enabled = true;
+        }
+
+        audioSource?.Stop();
+        aiming?.RefreshFacingRenderers();
+        machine = new EnemyMachine(this);
+        machine.Start();
+    }
+
     internal bool IsTargetInAttackRange()
     {
         return GetTargetDistance(CurrentTarget) <= attackRange;

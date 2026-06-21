@@ -9,6 +9,7 @@ public class EnemyAiming : MonoBehaviour
 
     [Header("Facing")]
     [SerializeField] private bool defaultFacesRight = true;
+    [SerializeField] private bool initialFacesRight = false;
 
     [Header("Reload")]
     [SerializeField] private float rightReloadAngle = -45f;
@@ -25,6 +26,7 @@ public class EnemyAiming : MonoBehaviour
     private float currentReloadAngle;
     private SpriteRenderer[] facingRenderers;
     private bool[] initialFlipX;
+    private Vector3[] initialLocalPositions;
 
     private void Awake()
     {
@@ -38,12 +40,15 @@ public class EnemyAiming : MonoBehaviour
             bodyRenderer = GetComponentInChildren<SpriteRenderer>();
         }
 
+        isFacingRight = initialFacesRight;
         RefreshFacingRenderers();
 
         if (weaponHandle != null)
         {
             weaponScaleY = Mathf.Abs(weaponHandle.localScale.y);
         }
+
+        Face(initialFacesRight ? Vector2.right : Vector2.left);
     }
 
     public void RefreshFacingRenderers()
@@ -61,6 +66,8 @@ public class EnemyAiming : MonoBehaviour
 
         facingRenderers = new SpriteRenderer[rendererCount];
         initialFlipX = new bool[rendererCount];
+        initialLocalPositions = new Vector3[rendererCount];
+        bool currentlyFlippedFromDefault = defaultFacesRight ? !isFacingRight : isFacingRight;
 
         int facingRendererIndex = 0;
 
@@ -74,7 +81,16 @@ public class EnemyAiming : MonoBehaviour
             }
 
             facingRenderers[facingRendererIndex] = childRenderer;
-            initialFlipX[facingRendererIndex] = childRenderer.flipX;
+            initialFlipX[facingRendererIndex] = childRenderer.flipX ^ currentlyFlippedFromDefault;
+
+            Vector3 defaultLocalPosition = childRenderer.transform.localPosition;
+
+            if (currentlyFlippedFromDefault)
+            {
+                defaultLocalPosition.x = -defaultLocalPosition.x;
+            }
+
+            initialLocalPositions[facingRendererIndex] = defaultLocalPosition;
             facingRendererIndex++;
         }
     }
@@ -185,6 +201,13 @@ public class EnemyAiming : MonoBehaviour
             if (facingRenderers[i] != null)
             {
                 facingRenderers[i].flipX = initialFlipX[i] ^ flipFromDefault;
+
+                if (facingRenderers[i].transform != transform)
+                {
+                    Vector3 localPosition = initialLocalPositions[i];
+                    localPosition.x = flipFromDefault ? -localPosition.x : localPosition.x;
+                    facingRenderers[i].transform.localPosition = localPosition;
+                }
             }
         }
     }

@@ -8,7 +8,8 @@ public class PlayerHealth : MonoBehaviour
 {
     private const string MainMenuSceneName = "MainMenu";
     private const float FadeTargetAlpha = 1f;
-    private const int DeadSortingOrder = 10;
+    private const float FallDeathY = -160f;
+    private const int DeadSortingOrder = 11;
 
     [Header("Player")]
     [SerializeField] private SpriteRenderer bodyRenderer;
@@ -43,6 +44,8 @@ public class PlayerHealth : MonoBehaviour
     private PlayerAimToCursor aim;
     private ShotgunFire shotgunFire;
     private MouseLookCameraTarget cameraTarget;
+    private PlayerSpawnFadeController spawnFade;
+    private EnemyHealth[] enemies;
     private Sprite aliveSprite;
     private int aliveSortingOrder;
     private RigidbodyConstraints2D aliveConstraints;
@@ -51,6 +54,8 @@ public class PlayerHealth : MonoBehaviour
     private bool shotgunWasEnabled;
     private bool handleWasActive;
     private bool isDead;
+    private Vector2 activeRespawnPosition;
+    private int activeCheckpointOrder = -1;
     private Sequence deathSequence;
 
     public bool IsDead => isDead;
@@ -58,11 +63,21 @@ public class PlayerHealth : MonoBehaviour
     private void Awake()
     {
         ResolveReferences();
+        activeRespawnPosition = respawnPosition;
         aliveSprite = bodyRenderer != null ? bodyRenderer.sprite : null;
         aliveSortingOrder = bodyRenderer != null ? bodyRenderer.sortingOrder : 0;
         aliveConstraints = rb != null ? rb.constraints : RigidbodyConstraints2D.None;
+        enemies = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None);
         WireButtons();
         HideDeadCanvas();
+    }
+
+    private void Update()
+    {
+        if (!isDead && transform.position.y <= FallDeathY)
+        {
+            EnterDeadState();
+        }
     }
 
     public void TakeDamage(int damage)
@@ -77,7 +92,7 @@ public class PlayerHealth : MonoBehaviour
     {
         deathSequence?.Kill();
         isDead = false;
-        transform.position = respawnPosition;
+        transform.position = activeRespawnPosition;
         transform.rotation = Quaternion.identity;
         transform.localScale = defaultScale;
 
@@ -95,7 +110,7 @@ public class PlayerHealth : MonoBehaviour
 
         if (rb != null)
         {
-            rb.position = respawnPosition;
+            rb.position = activeRespawnPosition;
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
             rb.constraints = aliveConstraints;
@@ -110,10 +125,41 @@ public class PlayerHealth : MonoBehaviour
         SetControlState(true);
         cameraTarget?.SetCursorFollowEnabled(true);
         HideDeadCanvas();
+        RespawnEnemies();
 
         if (audioSource != null && spawnClip != null)
         {
             audioSource.PlayOneShot(spawnClip, spawnVolume * GameSettings.SfxVolume);
+        }
+
+        spawnFade?.PlayFade();
+    }
+
+    public bool ActivateCheckpoint(int order, Vector2 position)
+    {
+        if (order <= activeCheckpointOrder)
+        {
+            return false;
+        }
+
+        activeCheckpointOrder = order;
+        activeRespawnPosition = position;
+        return true;
+    }
+
+    private void RespawnEnemies()
+    {
+        foreach (BulletProjectile bullet in FindObjectsByType<BulletProjectile>(FindObjectsSortMode.None))
+        {
+            Destroy(bullet.gameObject);
+        }
+
+        foreach (EnemyHealth enemy in enemies)
+        {
+            if (enemy != null)
+            {
+                enemy.Respawn();
+            }
         }
     }
 
@@ -266,6 +312,7 @@ public class PlayerHealth : MonoBehaviour
 
         Camera mainCamera = Camera.main;
         cameraTarget = mainCamera != null ? mainCamera.GetComponent<MouseLookCameraTarget>() : null;
+        spawnFade = FindFirstObjectByType<PlayerSpawnFadeController>();
 
         if (audioSource == null)
         {

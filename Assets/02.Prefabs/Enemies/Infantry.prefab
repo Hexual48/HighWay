@@ -86,10 +86,10 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: -6199720543617963891, guid: bf784977ea53ff44d969a7faad26be04, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.03, y: 3.02}
@@ -111,7 +111,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   origin: {fileID: 8282322572160648437}
-  viewDistance: 35
+  viewDistance: 40
   viewAngle: 150
   aiming: {fileID: 0}
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
@@ -160,7 +160,7 @@ MonoBehaviour:
   reloadVolume: 1
   alertRenderer: {fileID: 7431030829090751212}
   moveSpeed: 3
-  attackRange: 28
+  attackRange: 35
   retreatDistance: 2
   attackRangeGizmoColor: {r: 0, g: 0, b: 1, a: 1}
   retreatDistanceGizmoColor: {r: 0, g: 1, b: 1, a: 1}
@@ -179,7 +179,8 @@ MonoBehaviour:
   vision: {fileID: 6423654801767525823}
   bodyRenderer: {fileID: 5935746457144467169}
   weaponHandle: {fileID: 4075789319781597206}
-  defaultFacesRight: 1
+  defaultFacesRight: 0
+  initialFacesRight: 0
   rightReloadAngle: -45
   leftReloadAngle: 45
   lowerDuration: 0.2
@@ -431,7 +432,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 3b25278aa2de79047be8e3d561476e6d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -462,22 +463,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &910000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6168546358328584506}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d036966c547426c981ad4ade5e8318a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  health: 100
-  armorType: 2
-  shieldBrokenClip: {fileID: 8300000, guid: 757637f10d283334ea013a96828a6d93, type: 3}
-  shieldBrokenVolume: 1
 --- !u!4 &6255661420375723512
 Transform:
   m_ObjectHideFlags: 0
@@ -487,7 +472,7 @@ Transform:
   m_GameObject: {fileID: 6168546358328584506}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.04, y: 0.8, z: 0}
+  m_LocalPosition: {x: 0.04, y: 0.8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -536,10 +521,10 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 2
   m_Sprite: {fileID: -8626203086573229127, guid: 8f6a5a7b474788f4db3175443d5c5d7d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.29, y: 1.56}
@@ -626,6 +611,22 @@ PolygonCollider2D:
       - {x: -0.275, y: -0.74}
       - {x: 0.59499997, y: -0.71999997}
   m_UseDelaunayMesh: 0
+--- !u!114 &910000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168546358328584506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d036966c547426c981ad4ade5e8318a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 10
+  armorType: 2
+  shieldBrokenClip: {fileID: 8300000, guid: 757637f10d283334ea013a96828a6d93, type: 3}
+  shieldBrokenVolume: 1
 --- !u!1 &6479321921316289791
 GameObject:
   m_ObjectHideFlags: 0
@@ -702,7 +703,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 3
   m_Sprite: {fileID: 4402745383198894890, guid: 57b5d0828fead244aacabfe1edeffedc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -738,14 +739,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7214951762808847706}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: -0.6, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: -1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6465843428342417414}
   m_Father: {fileID: 8282322572160648437}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!1 &7357422835561120043
 GameObject:
   m_ObjectHideFlags: 0

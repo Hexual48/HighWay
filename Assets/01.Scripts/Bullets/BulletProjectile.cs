@@ -12,7 +12,7 @@ public class BulletProjectile : MonoBehaviour
         public int Priority => Armor != null ? Armor.HitPriority : 0;
     }
 
-    private const int EnemyBulletDamage = 1;
+    private const int EnemyBulletDamage = 20;
     private const int EnemyBulletPenetration = 0;
     private const string PlayerBulletLayerName = "PlayerBullet";
 
