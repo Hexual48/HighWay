@@ -49,7 +49,9 @@ public class EnemyFire : MonoBehaviour
     {
         Transform originTransform = firePoint != null ? firePoint : transform;
         Vector2 origin = originTransform.position;
-        Vector2 forward = originTransform.right;
+        Vector2 forward = Application.isPlaying
+            ? originTransform.TransformVector(Vector2.right).normalized
+            : transform.right;
         float halfSpread = spreadAngle * 0.5f;
 
         Gizmos.color = spreadGizmoColor;

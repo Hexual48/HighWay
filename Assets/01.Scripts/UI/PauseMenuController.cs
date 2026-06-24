@@ -7,7 +7,6 @@ public class PauseMenuController : MonoBehaviour
 {
     private const string MainMenuSceneName = "MainMenu";
     private const float NormalTimeScale = 1f;
-    private const float SlowTimeScale = 0.1f;
 
     [Header("References")]
     [SerializeField] private GameObject pauseCanvas;
@@ -15,6 +14,9 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private GameObject shellsUI;
     [SerializeField] private GameObject settingsUI;
     [SerializeField] private PlayerInput playerInput;
+
+    [Header("Slow Motion")]
+    [SerializeField, Range(0.05f, 1f)] private float slowTimeScale = 0.5f;
 
     [Header("Animation")]
     [SerializeField] private float hiddenOffsetX = -1600f;
@@ -41,20 +43,20 @@ public class PauseMenuController : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current == null)
-            return;
-
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             TogglePause();
 
-        if (!isPaused && Keyboard.current.tabKey.wasPressedThisFrame)
-            ToggleSlowMotion();
+        if (!isPaused)
+            SetSlowMotion(Mouse.current != null && Mouse.current.rightButton.isPressed);
     }
 
-    private void ToggleSlowMotion()
+    private void SetSlowMotion(bool enabled)
     {
-        isSlowMotion = !isSlowMotion;
-        Time.timeScale = isSlowMotion ? SlowTimeScale : NormalTimeScale;
+        if (isSlowMotion == enabled)
+            return;
+
+        isSlowMotion = enabled;
+        ApplyGameplayTimeScale();
     }
 
     public void TogglePause()
@@ -108,10 +110,16 @@ public class PauseMenuController : MonoBehaviour
             .OnComplete(() =>
             {
                 pauseCanvas.SetActive(false);
-                Time.timeScale = isSlowMotion ? SlowTimeScale : NormalTimeScale;
+                isSlowMotion = Mouse.current != null && Mouse.current.rightButton.isPressed;
+                ApplyGameplayTimeScale();
                 AudioListener.pause = false;
                 playerInput?.ActivateInput();
             });
+    }
+
+    private void ApplyGameplayTimeScale()
+    {
+        Time.timeScale = isSlowMotion ? slowTimeScale : NormalTimeScale;
     }
 
     public void QuitGame()

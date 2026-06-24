@@ -112,7 +112,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   origin: {fileID: 8282322572160648437}
   viewDistance: 40
-  viewAngle: 150
+  viewAngle: 120
   aiming: {fileID: 0}
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
   targetLineGizmoColor: {r: 0, g: 1, b: 0, a: 1}
@@ -159,9 +159,9 @@ MonoBehaviour:
   fireVolume: 1
   reloadVolume: 1
   alertRenderer: {fileID: 7431030829090751212}
-  moveSpeed: 3
-  attackRange: 35
-  retreatDistance: 2
+  moveSpeed: 6
+  attackRange: 25
+  retreatDistance: 8
   attackRangeGizmoColor: {r: 0, g: 0, b: 1, a: 1}
   retreatDistanceGizmoColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!114 &2093955864280127432
@@ -179,8 +179,8 @@ MonoBehaviour:
   vision: {fileID: 6423654801767525823}
   bodyRenderer: {fileID: 5935746457144467169}
   weaponHandle: {fileID: 4075789319781597206}
-  defaultFacesRight: 0
-  initialFacesRight: 0
+  defaultFacesRight: 1
+  initialFacesRight: 1
   rightReloadAngle: -45
   leftReloadAngle: 45
   lowerDuration: 0.2
@@ -524,7 +524,7 @@ SpriteRenderer:
   m_SortingOrder: 2
   m_Sprite: {fileID: -8626203086573229127, guid: 8f6a5a7b474788f4db3175443d5c5d7d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 1
+  m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.29, y: 1.56}
@@ -739,14 +739,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7214951762808847706}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.6, z: 0}
-  m_LocalScale: {x: 1, y: -1, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6465843428342417414}
   m_Father: {fileID: 8282322572160648437}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7357422835561120043
 GameObject:
   m_ObjectHideFlags: 0

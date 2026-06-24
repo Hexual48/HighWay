@@ -21,12 +21,9 @@ public class EnemyAiming : MonoBehaviour
         new Keyframe(1f, 1f));
 
     private bool isFacingRight = true;
-    private float weaponScaleY;
+    private float facingScaleX;
     private float reloadStartAngle;
     private float currentReloadAngle;
-    private SpriteRenderer[] facingRenderers;
-    private bool[] initialFlipX;
-    private Vector3[] initialLocalPositions;
 
     private void Awake()
     {
@@ -43,56 +40,13 @@ public class EnemyAiming : MonoBehaviour
         isFacingRight = initialFacesRight;
         RefreshFacingRenderers();
 
-        if (weaponHandle != null)
-        {
-            weaponScaleY = Mathf.Abs(weaponHandle.localScale.y);
-        }
-
         Face(initialFacesRight ? Vector2.right : Vector2.left);
     }
 
     public void RefreshFacingRenderers()
     {
-        SpriteRenderer[] childRenderers = GetComponentsInChildren<SpriteRenderer>(true);
-        int rendererCount = 0;
-
-        for (int i = 0; i < childRenderers.Length; i++)
-        {
-            if (!IsWeaponRenderer(childRenderers[i]))
-            {
-                rendererCount++;
-            }
-        }
-
-        facingRenderers = new SpriteRenderer[rendererCount];
-        initialFlipX = new bool[rendererCount];
-        initialLocalPositions = new Vector3[rendererCount];
-        bool currentlyFlippedFromDefault = defaultFacesRight ? !isFacingRight : isFacingRight;
-
-        int facingRendererIndex = 0;
-
-        for (int i = 0; i < childRenderers.Length; i++)
-        {
-            SpriteRenderer childRenderer = childRenderers[i];
-
-            if (IsWeaponRenderer(childRenderer))
-            {
-                continue;
-            }
-
-            facingRenderers[facingRendererIndex] = childRenderer;
-            initialFlipX[facingRendererIndex] = childRenderer.flipX ^ currentlyFlippedFromDefault;
-
-            Vector3 defaultLocalPosition = childRenderer.transform.localPosition;
-
-            if (currentlyFlippedFromDefault)
-            {
-                defaultLocalPosition.x = -defaultLocalPosition.x;
-            }
-
-            initialLocalPositions[facingRendererIndex] = defaultLocalPosition;
-            facingRendererIndex++;
-        }
+        facingScaleX = Mathf.Abs(transform.localScale.x);
+        ApplyFacingScale();
     }
 
     public void Aim(Vector2 direction)
@@ -144,7 +98,7 @@ public class EnemyAiming : MonoBehaviour
     {
         if (weaponHandle != null)
         {
-            reloadStartAngle = weaponHandle.eulerAngles.z;
+            reloadStartAngle = weaponHandle.localEulerAngles.z;
             currentReloadAngle = isFacingRight ? rightReloadAngle : leftReloadAngle;
         }
     }
@@ -180,7 +134,7 @@ public class EnemyAiming : MonoBehaviour
             motion = 1f - reloadEase.Evaluate(Mathf.Clamp01(progress));
         }
 
-        weaponHandle.rotation = Quaternion.Euler(
+        weaponHandle.localRotation = Quaternion.Euler(
             0f,
             0f,
             reloadStartAngle + currentReloadAngle * motion);
@@ -194,36 +148,24 @@ public class EnemyAiming : MonoBehaviour
         }
 
         isFacingRight = direction.x > 0f;
-        bool flipFromDefault = defaultFacesRight ? !isFacingRight : isFacingRight;
-
-        for (int i = 0; i < facingRenderers.Length; i++)
-        {
-            if (facingRenderers[i] != null)
-            {
-                facingRenderers[i].flipX = initialFlipX[i] ^ flipFromDefault;
-
-                if (facingRenderers[i].transform != transform)
-                {
-                    Vector3 localPosition = initialLocalPositions[i];
-                    localPosition.x = flipFromDefault ? -localPosition.x : localPosition.x;
-                    facingRenderers[i].transform.localPosition = localPosition;
-                }
-            }
-        }
+        ApplyFacingScale();
     }
 
-    private bool IsWeaponRenderer(SpriteRenderer spriteRenderer)
+    private void ApplyFacingScale()
     {
-        return weaponHandle != null && spriteRenderer.transform.IsChildOf(weaponHandle);
+        bool flipFromDefault = defaultFacesRight ? !isFacingRight : isFacingRight;
+        Vector3 scale = transform.localScale;
+        scale.x = flipFromDefault ? -facingScaleX : facingScaleX;
+        transform.localScale = scale;
     }
 
     private void AimWeapon(Vector2 direction)
     {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        weaponHandle.rotation = Quaternion.Euler(0f, 0f, angle);
-
-        Vector3 scale = weaponHandle.localScale;
-        scale.y = isFacingRight ? weaponScaleY : -weaponScaleY;
-        weaponHandle.localScale = scale;
+        Transform weaponParent = weaponHandle.parent;
+        Vector2 localDirection = weaponParent != null
+            ? weaponParent.InverseTransformVector(direction).normalized
+            : direction;
+        float angle = Mathf.Atan2(localDirection.y, localDirection.x) * Mathf.Rad2Deg;
+        weaponHandle.localRotation = Quaternion.Euler(0f, 0f, angle);
     }
 }

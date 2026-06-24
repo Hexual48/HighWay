@@ -49,6 +49,11 @@ public class PlayerAmmo : MonoBehaviour
             SelectNextAmmo();
         }
 
+        if (Keyboard.current.iKey.wasPressedThisFrame)
+        {
+            UnlockAllAmmo();
+        }
+
         if (Keyboard.current.vKey.wasPressedThisFrame)
         {
             DebugCurrentAmmo();
@@ -85,6 +90,34 @@ public class PlayerAmmo : MonoBehaviour
     public bool IsAmmoUnlocked(AmmoData ammoData)
     {
         return ammoData != null && unlockedAmmos.Contains(ammoData);
+    }
+
+    public void UnlockAllAmmo()
+    {
+        bool unlockedAny = false;
+
+        for (int i = 0; i < ammoSlots.Count; i++)
+        {
+            AmmoSlot slot = ammoSlots[i];
+
+            if (slot != null && slot.ammoData != null)
+            {
+                unlockedAny |= unlockedAmmos.Add(slot.ammoData);
+            }
+        }
+
+        if (!unlockedAny)
+        {
+            return;
+        }
+
+        SelectFirstAvailableAmmo();
+        AmmoChanged?.Invoke();
+
+        if (debugLogSelection)
+        {
+            Debug.Log("All ammo unlocked.", this);
+        }
     }
 
     public bool CanSelectPreviousAmmo()

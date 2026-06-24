@@ -282,7 +282,7 @@ MonoBehaviour:
   fireVolume: 1
   reloadVolume: 1
   alertRenderer: {fileID: 7177982182279203560}
-  moveSpeed: 4
+  moveSpeed: 8
   attackRange: 45
   retreatDistance: 5
   attackRangeGizmoColor: {r: 0, g: 0, b: 1, a: 1}
@@ -302,8 +302,8 @@ MonoBehaviour:
   vision: {fileID: 4146131224317184848}
   bodyRenderer: {fileID: 8086539396475219418}
   weaponHandle: {fileID: 8819916335915508739}
-  defaultFacesRight: 0
-  initialFacesRight: 0
+  defaultFacesRight: 1
+  initialFacesRight: 1
   rightReloadAngle: -45
   leftReloadAngle: 45
   lowerDuration: 0.2
@@ -542,7 +542,7 @@ SpriteRenderer:
   m_SortingOrder: 2
   m_Sprite: {fileID: 8396970846225137241, guid: 33f9e25e621f8b14baccfc8ce3e93a6d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 1
+  m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1.97}
@@ -636,7 +636,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d036966c547426c981ad4ade5e8318a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 20
   armorType: 1
   shieldBrokenClip: {fileID: 8300000, guid: 757637f10d283334ea013a96828a6d93, type: 3}
   shieldBrokenVolume: 1
@@ -751,7 +751,7 @@ SpriteRenderer:
   m_SortingOrder: 2
   m_Sprite: {fileID: -8342115017843062893, guid: a7fa3d1f130710547b7b48d5f37c8d37, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 1
+  m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 3.49, y: 3.25}
@@ -872,7 +872,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d036966c547426c981ad4ade5e8318a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  health: 60
   armorType: 2
   shieldBrokenClip: {fileID: 8300000, guid: 757637f10d283334ea013a96828a6d93, type: 3}
   shieldBrokenVolume: 1
@@ -900,14 +900,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7549107726412213976}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.6, z: 0}
-  m_LocalScale: {x: 1, y: -1, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1959331022756349686}
   m_Father: {fileID: 6597763933119200846}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8808474731510703943
 GameObject:
   m_ObjectHideFlags: 0
